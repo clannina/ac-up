@@ -1,143 +1,140 @@
 # AC UP – Product Vision
 
-**Version:** 2.0  
-**Status:** Approved  
-**Owner:** Product Team
+**Versione:** 2.0  
+**Stato:** Ufficiale  
+**Ultimo aggiornamento:** Luglio 2026
+
+---
+
+# Cos'è AC UP
+
+AC UP è una piattaforma digitale progettata per aiutare le persone a costruire un'alimentazione più equilibrata attraverso la pianificazione intelligente dei pasti.
+
+L'obiettivo non è contare calorie.
+
+L'obiettivo non è imporre una dieta.
+
+L'obiettivo è semplificare ogni decisione quotidiana legata all'alimentazione.
+
+AC UP accompagna l'utente dalla pianificazione della settimana fino alla preparazione dei pasti, trasformando un processo spesso complicato in un'esperienza semplice, organizzata e piacevole.
 
 ---
 
 # Vision
 
-AC UP è una piattaforma digitale progettata per semplificare la pianificazione alimentare e trasformare le buone intenzioni in abitudini quotidiane.
+Diventare il punto di riferimento per chi desidera organizzare la propria alimentazione senza rinunciare alla libertà di scelta.
 
-Non è un contacalorie.
+AC UP deve evolvere da semplice applicazione nutrizionale a vero assistente personale capace di supportare l'utente ogni giorno.
 
-Non è una dieta preconfezionata.
+L'app non sostituisce il professionista della nutrizione.
 
-Non è un'app che giudica.
-
-AC UP è un assistente personale che accompagna ogni utente nella costruzione di uno stile di vita più equilibrato, attraverso un'esperienza semplice, intuitiva e piacevole.
-
-Ogni funzionalità deve ridurre il tempo necessario per decidere cosa mangiare, cosa acquistare e come organizzare la propria settimana.
+Lo affianca.
 
 ---
 
 # Mission
 
-Offrire uno strumento intelligente che permetta alle persone di mangiare meglio senza complicarsi la vita.
+Ridurre il tempo, lo stress e l'incertezza che accompagnano la gestione dell'alimentazione quotidiana.
 
-L'app deve aiutare l'utente a:
+Ogni funzione dell'app deve aiutare l'utente a rispondere rapidamente a domande come:
 
-- pianificare i pasti;
-- organizzare la spesa;
-- monitorare i progressi;
-- mantenere la motivazione;
-- creare abitudini sostenibili nel tempo.
+- Cosa mangio oggi?
+- Cosa devo comprare?
+- Quanto devo preparare?
+- Sto seguendo il mio piano?
+- Sto migliorando?
 
-L'obiettivo non è la perfezione, ma la continuità.
-
----
-
-# Product Statement
-
-AC UP combina pianificazione alimentare, organizzazione personale e monitoraggio del benessere in un'unica esperienza semplice e coerente.
-
-Ogni funzione deve rispondere a una domanda concreta:
-
-> Come possiamo rendere questa attività più semplice per l'utente?
+Se una funzione non aiuta a risolvere uno di questi problemi, probabilmente non appartiene ad AC UP.
 
 ---
 
-# Product Pillars
+# La promessa del prodotto
 
-## 1. Simplicity
+AC UP promette un'esperienza che sia:
 
-La semplicità è una scelta progettuale.
+- semplice da usare;
+- piacevole da consultare;
+- affidabile nei dati;
+- personalizzata;
+- coerente nel tempo.
 
-Ogni schermata deve essere comprensibile entro pochi secondi.
-
-Ogni azione importante deve essere raggiungibile con il minor numero possibile di passaggi.
-
-La semplicità prevale sempre sulla quantità di funzionalità.
-
----
-
-## 2. Personalization
-
-Ogni persona ha esigenze differenti.
-
-AC UP deve adattarsi all'utente e non costringere l'utente ad adattarsi all'applicazione.
-
-Le preferenze alimentari, gli obiettivi, le restrizioni e le abitudini devono influenzare automaticamente l'esperienza.
+L'utente deve percepire l'app come uno spazio personale, non come uno strumento di controllo.
 
 ---
 
-## 3. Trust
+# Principi fondamentali
 
-Il rapporto tra utente e applicazione si basa sulla fiducia.
+## 1. La semplicità viene prima di tutto
+
+Ogni schermata deve avere un solo obiettivo principale.
+
+Ogni azione importante deve richiedere il minor numero possibile di passaggi.
+
+Le funzionalità devono essere facilmente comprensibili anche al primo utilizzo.
+
+---
+
+## 2. L'utente è al centro
+
+L'app si adatta alle esigenze della persona.
+
+Non il contrario.
+
+Preferenze alimentari, obiettivi, allergie, stile di vita e progressi devono influenzare automaticamente l'esperienza.
+
+---
+
+## 3. La continuità conta più della perfezione
+
+AC UP incoraggia la costanza.
+
+Mai il senso di colpa.
+
+I progressi vengono valorizzati attraverso piccoli traguardi raggiungibili.
+
+---
+
+## 4. Il design è funzionale
+
+Ogni elemento grafico deve avere uno scopo.
+
+Nessun elemento decorativo senza utilità.
+
+Lo spazio bianco è parte dell'interfaccia.
+
+La leggibilità è sempre prioritaria.
+
+---
+
+## 5. Fiducia
+
+L'utente deve poter comprendere facilmente ogni dato mostrato.
 
 Le informazioni devono essere:
 
 - trasparenti;
-- verificabili;
-- facilmente comprensibili;
-- coerenti.
-
-Mai utilizzare meccanismi manipolativi o notifiche inutili.
+- coerenti;
+- aggiornate;
+- verificabili.
 
 ---
 
-## 4. Consistency
+# Personalità del brand
 
-Ogni parte dell'app deve sembrare appartenere allo stesso prodotto.
+AC UP deve essere percepita come:
 
-Colori, componenti, animazioni, linguaggio e comportamento devono seguire regole condivise.
-
-La coerenza è un requisito funzionale, non soltanto estetico.
-
----
-
-## 5. Progress
-
-AC UP misura i progressi, non la perfezione.
-
-L'app deve valorizzare la costanza quotidiana.
-
-Piccoli miglioramenti ripetuti nel tempo hanno più valore di risultati eccezionali ma occasionali.
-
----
-
-# Target
-
-AC UP è pensata per persone che desiderano:
-
-- perdere peso;
-- mantenere il peso;
-- migliorare la qualità dell'alimentazione;
-- organizzare i pasti della settimana;
-- risparmiare tempo nella pianificazione;
-- creare una routine alimentare sostenibile.
-
-Non è progettata esclusivamente per atleti o professionisti della nutrizione.
-
----
-
-# Brand Personality
-
-Il prodotto deve essere percepito come:
-
-- competente;
+- professionale;
 - rassicurante;
-- moderno;
+- moderna;
 - elegante;
-- accessibile;
-- concreto.
+- concreta;
+- accessibile.
 
-Mai freddo.
+Mai aggressiva.
 
 Mai infantile.
 
-Mai eccessivamente tecnico.
+Mai eccessivamente tecnica.
 
 ---
 
@@ -147,129 +144,120 @@ La comunicazione deve essere:
 
 - positiva;
 - chiara;
+- naturale;
 - rispettosa;
-- motivante;
-- naturale.
+- motivante.
 
 Da evitare:
 
-- linguaggio giudicante;
-- toni colpevolizzanti;
-- promesse irrealistiche;
-- eccessi di entusiasmo artificiale.
+- giudizi;
+- colpevolizzazioni;
+- slogan eccessivi;
+- promesse irrealistiche.
 
 ---
 
-# User Experience Principles
+# Esperienza utente
 
-Ogni schermata deve rispondere a tre domande.
+Aprendo AC UP l'utente deve capire immediatamente:
 
-## Dove mi trovo?
+- dove si trova;
+- cosa deve fare;
+- quali informazioni sono importanti;
+- quali progressi ha compiuto.
 
-L'interfaccia deve essere immediatamente riconoscibile.
+Ogni schermata deve ridurre il carico cognitivo.
 
----
-
-## Cosa posso fare?
-
-L'azione principale deve essere evidente.
-
----
-
-## Cosa succede dopo?
-
-Ogni interazione deve fornire un feedback chiaro.
+L'interfaccia deve trasmettere calma e ordine.
 
 ---
 
-# Design Principles
+# Obiettivi del prodotto
 
-Il design deve trasmettere:
+AC UP deve permettere all'utente di:
 
-- calma;
-- ordine;
-- leggibilità;
-- equilibrio;
-- fiducia.
-
-Ogni elemento grafico deve avere uno scopo.
-
-Non esistono elementi puramente decorativi.
+- pianificare automaticamente la settimana alimentare;
+- modificare facilmente ogni pasto;
+- creare la lista della spesa;
+- monitorare peso e progressi;
+- seguire il proprio piano alimentare;
+- costruire abitudini sostenibili.
 
 ---
 
-# Accessibility
+# Cosa AC UP non deve diventare
 
-L'accessibilità è parte integrante del progetto.
+AC UP non deve essere:
 
-Ogni nuova funzionalità deve rispettare:
+- un'app complicata;
+- un gestionale pieno di menu;
+- un semplice database di ricette;
+- un social network;
+- un'app che genera ansia.
 
-- contrasto WCAG AA;
-- touch target minimo 44×44 px;
-- navigazione tramite tastiera;
-- supporto agli screen reader;
-- testo leggibile senza ingrandimenti.
+Ogni nuova funzionalità deve mantenere il prodotto semplice.
 
 ---
 
-# Technology Principles
+# Principi di progettazione
 
-Le scelte tecniche devono privilegiare:
+Quando esistono più soluzioni:
 
-- semplicità;
-- manutenibilità;
-- riutilizzo del codice;
-- performance;
-- sicurezza;
-- scalabilità.
+scegliere sempre quella più semplice.
 
-Ogni nuova funzionalità deve integrarsi con l'architettura esistente senza introdurre complessità non necessaria.
+Quando esistono più componenti:
+
+riutilizzare quelli esistenti.
+
+Quando esistono più percorsi:
+
+scegliere quello con meno passaggi.
 
 ---
 
 # Definition of Done
 
-Una funzionalità può essere considerata completata solo se:
+Una funzionalità è completata solo se:
 
-- soddisfa i requisiti funzionali;
 - rispetta il Design System;
 - è responsive;
 - è accessibile;
 - è documentata;
 - è testata;
 - mantiene elevate prestazioni;
+- utilizza componenti condivisi;
 - non introduce regressioni.
 
 ---
 
-# Long-Term Vision
+# Visione a lungo termine
 
-Nel tempo AC UP evolverà da semplice pianificatore alimentare a piattaforma completa per il benessere personale.
+Nel tempo AC UP evolverà in una piattaforma completa dedicata al benessere alimentare.
 
-Le future evoluzioni includeranno:
+Le future evoluzioni comprenderanno:
 
-- assistente AI per la pianificazione dei pasti;
-- suggerimenti intelligenti basati sulle abitudini;
-- gestione automatica della lista della spesa;
-- integrazione con Apple Health e Google Fit;
-- monitoraggio dei progressi;
+- assistente AI;
+- pianificazione intelligente dei pasti;
+- suggerimenti basati sulle abitudini;
+- gestione automatica della dispensa;
+- lista della spesa intelligente;
+- integrazione con Apple Health;
+- integrazione con Google Fit;
+- notifiche personalizzate;
 - analisi nutrizionali avanzate;
-- notifiche realmente utili;
-- sincronizzazione tra dispositivi;
+- sincronizzazione multi-dispositivo;
 - funzionalità Premium.
 
-Ogni nuova funzionalità dovrà rafforzare questa visione, senza aumentare inutilmente la complessità dell'esperienza.
+Ogni nuova funzione dovrà rispettare i principi definiti in questo documento.
 
 ---
 
-# Guiding Principle
+# La regola più importante
 
-Prima di implementare qualsiasi nuova funzionalità, il team deve porsi una domanda:
+Prima di sviluppare qualsiasi funzionalità il team deve porsi una sola domanda:
 
-> **Questa scelta rende davvero l'esperienza dell'utente più semplice, più chiara o più utile?**
+> **Questa scelta rende l'esperienza dell'utente più semplice, più chiara o più utile?**
 
 Se la risposta è **no**, la soluzione deve essere ripensata.
 
-La semplicità non è un limite.
-
-È il valore principale di AC UP.
+La semplicità è il principio guida di AC UP.
