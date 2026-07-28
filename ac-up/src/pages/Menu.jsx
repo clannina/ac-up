@@ -29,14 +29,22 @@ export default function Menu() {
           {GIORNI.map((giorno) => (
             <div key={giorno} className="rounded-lg border border-[#E4DFCF] bg-white/60 px-4 py-3">
               <p className="font-display text-lg">{giorno}</p>
-              <div className="grid grid-cols-3 gap-2 mt-2 text-sm">
+              <div className="grid grid-cols-5 gap-2 mt-2 text-xs">
                 <div>
                   <p className="text-[10px] uppercase text-sage">Colazione</p>
                   <p>{week[giorno].colazione?.nome}</p>
                 </div>
                 <div>
+                  <p className="text-[10px] uppercase text-sage">Spuntino</p>
+                  <p>{week[giorno].spuntino?.nome}</p>
+                </div>
+                <div>
                   <p className="text-[10px] uppercase text-sage">Pranzo</p>
                   <p>{week[giorno].pranzo?.nome}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase text-sage">Merenda</p>
+                  <p>{week[giorno].merenda?.nome}</p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase text-sage">Cena</p>
