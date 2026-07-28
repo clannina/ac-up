@@ -2,6 +2,13 @@ import { SEED_RECIPES } from "./seedRecipes.js";
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
+const SPUNTINI = [
+  { nome: "Un frutto di stagione" }, { nome: "Manciata di frutta secca" }, { nome: "Bastoncini di verdura" },
+];
+const MERENDE = [
+  { nome: "Yogurt greco e frutta" }, { nome: "Frutta fresca" }, { nome: "Yogurt greco e frutti di bosco" },
+];
+
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -16,9 +23,10 @@ function byCategoria(recipes, categoria) {
 }
 
 /**
- * Genera un piano settimanale (pranzo + cena) rispettando le regole:
+ * Genera un piano settimanale a 5 pasti (colazione, spuntino, pranzo,
+ * merenda, cena) rispettando le regole:
  * - max 3 pasti di carne, min 2 di pesce, min 2 di legumi, 1-2 uova/latticini
- * - un pasto della settimana è "pizza libera" (venerdì o sabato sera)
+ * - un pasto della settimana è "pizza libera" (venerdì sera)
  * - le colazioni non si ripetono per più di 2 giorni consecutivi
  * - nessuna proteina si ripete nello stesso giorno (rotazione)
  */
@@ -40,6 +48,8 @@ export function generateWeeklyMenu(recipes = SEED_RECIPES) {
     pool.push(shuffle([...legumi, ...pesce])[0]);
   }
   const mainMeals = shuffle(pool).slice(0, 13); // 14 pasti - 1 pizza = 13
+  const spuntiniShuffled = shuffle(SPUNTINI);
+  const merendeShuffled = shuffle(MERENDE);
 
   const week = {};
   let mealCursor = 0;
@@ -65,6 +75,9 @@ export function generateWeeklyMenu(recipes = SEED_RECIPES) {
     ultimaColazione = colazione?.nome;
     colazioneCursor += 1;
 
+    const spuntino = spuntiniShuffled[i % spuntiniShuffled.length];
+    const merenda = merendeShuffled[i % merendeShuffled.length];
+
     const pranzo = mainMeals[mealCursor % mainMeals.length];
     mealCursor += 1;
     const cena = isPizzaNight
@@ -72,7 +85,7 @@ export function generateWeeklyMenu(recipes = SEED_RECIPES) {
       : mainMeals[mealCursor % mainMeals.length];
     if (!isPizzaNight) mealCursor += 1;
 
-    week[giorno] = { colazione, pranzo, cena };
+    week[giorno] = { colazione, spuntino, pranzo, merenda, cena };
   });
 
   return week;
