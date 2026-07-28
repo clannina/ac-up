@@ -9,11 +9,12 @@ html, body, #root {
 body {
   background-color: #FBF8F2;
   color: #2B2A1F;
-  font-family: 'Work Sans', ui-sans-serif, system-ui;
+  font-family: 'Metropolis', ui-sans-serif, system-ui;
 }
 
 .font-display {
-  font-family: 'Fraunces', serif;
+  font-family: 'Metropolis', ui-sans-serif, system-ui;
+  font-weight: 600;
 }
 
 .font-mono-num {
@@ -22,3 +23,14 @@ body {
 
 ::-webkit-scrollbar { height: 6px; width: 6px; }
 ::-webkit-scrollbar-thumb { background: #D8D2C2; border-radius: 4px; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.kcal-ring {
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: conic-gradient(#5C8A63 calc(var(--pct) * 1%), #ECEEDF 0);
+}
