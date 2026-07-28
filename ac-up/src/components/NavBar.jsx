@@ -12,20 +12,24 @@ const LINKS = [
 
 export default function NavBar() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-[#E4DFCF] flex justify-around py-2 z-40">
-      {LINKS.map(({ to, label, icon: Icon, end }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={end}
-          className={({ isActive }) =>
-            `flex flex-col items-center gap-0.5 px-2 py-1 text-[11px] ${isActive ? "text-clay" : "text-[#9A9578]"}`
-          }
-        >
-          <Icon size={20} />
-          {label}
-        </NavLink>
-      ))}
+    <nav className="fixed bottom-4 left-4 right-4 z-40">
+      <div className="max-w-xl mx-auto bg-white rounded-full shadow-lg shadow-[#2B2A1F1A] flex justify-around py-2 px-1">
+        {LINKS.map(({ to, label, icon: Icon, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-2xl text-[10px] transition-colors ${
+                isActive ? "bg-[#EEF3EA] text-[#527A57]" : "text-[#B5AF95]"
+              }`
+            }
+          >
+            <Icon size={18} />
+            {label}
+          </NavLink>
+        ))}
+      </div>
     </nav>
   );
 }
