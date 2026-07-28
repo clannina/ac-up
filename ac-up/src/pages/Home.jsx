@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Calendar, Plus, Droplet, Flame } from "lucid
 
 const MEALS_OGGI = [
   { id: "colazione", label: "Colazione", emoji: "🍳", desc: "Pane integrale, uova, avocado", kcal: 420, from: "#FFA36B", to: "#FF6B4A" },
+  { id: "spuntino", label: "Spuntino", emoji: "🍎", desc: "Un frutto di stagione", kcal: 90, from: "#FFC98B", to: "#FF9F6B" },
   { id: "pranzo", label: "Pranzo", emoji: "🥗", desc: "Pollo, riso integrale, verdure", kcal: 610, from: "#8FB996", to: "#527A57" },
   { id: "merenda", label: "Merenda", emoji: "🍇", desc: "Yogurt greco e frutta", kcal: 180, from: "#D4E157", to: "#AED581" },
   { id: "cena", label: "Cena", emoji: "🐟", desc: "Salmone, patate, insalata", kcal: 520, from: "#6B8F71", to: "#3F5C46" },
