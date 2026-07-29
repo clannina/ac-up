@@ -27,6 +27,7 @@ const T = {
   protein: "#5B8DEF",
   carbs: "#F2994A",
   fat: "#62C370",
+  coral: "#E76F51",
 };
 
 const GLASS =
@@ -204,8 +205,8 @@ export default function Home() {
         {/* Obiettivo */}
         <div className={`${GLASS} rounded-2xl p-7 mb-10`}>
           <div className="flex items-center gap-2 mb-6">
-            <Flag size={15} style={{ color: T.sage }} />
-            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: T.stone }}>
+            <Flag size={15} style={{ color: T.coral }} />
+            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: T.coral }}>
               Obiettivo
             </span>
           </div>
@@ -244,7 +245,7 @@ export default function Home() {
         {/* Pasti di oggi */}
         <div className="mb-10">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold" style={{ color: T.ink }}>
+            <h2 className="text-lg font-bold uppercase tracking-wider" style={{ color: T.coral }}>
               Pasti di oggi
             </h2>
             <Link to="/menu" className="text-sm font-medium flex items-center gap-1" style={{ color: T.sage }}>
@@ -284,7 +285,7 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <IconChip icon={ShoppingCart} tint="#D4A24E" />
             <div>
-              <h3 className="text-sm font-semibold" style={{ color: T.ink }}>
+              <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: T.coral }}>
                 Lista della spesa
               </h3>
               <p className="text-xs mt-0.5" style={{ color: T.stone }}>
