@@ -1,20 +1,22 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  Coffee,
-  UtensilsCrossed,
-  Cookie,
-  Moon,
-  Apple,
   Check,
   Plus,
   ArrowRight,
   Flag,
+  Flame,
+  Droplet,
+  Scale,
+  ShoppingCart,
+  Coffee,
+  Apple,
+  UtensilsCrossed,
+  Cookie,
+  Moon,
 } from "lucide-react";
 
-/**
- * Token ufficiali da docs/03_DESIGN_TOKENS.md — non valori Tailwind generici.
- */
+/** Token ufficiali da docs/03_DESIGN_TOKENS.md — non valori Tailwind generici. */
 const T = {
   sage: "#5E8C61",
   forest: "#45684A",
@@ -27,17 +29,28 @@ const T = {
   fat: "#62C370",
 };
 
-// Classi condivise per i pannelli in vetro: bianco semi-trasparente + blur,
-// bordo chiaro sottile, ombra leggera (una sola, come da Design System).
 const GLASS =
   "bg-white/60 backdrop-blur-xl border border-white/70 shadow-[0_8px_30px_rgba(30,43,34,0.06)]";
 
+/** Icona flat in chip colorata morbida — Lucide (libreria ufficiale del
+ * progetto), niente asset esterni da cui dipendere. */
+function IconChip({ icon: Icon, tint, size = 38 }) {
+  return (
+    <div
+      className="rounded-2xl flex items-center justify-center shrink-0"
+      style={{ width: size, height: size, background: `${tint}22` }}
+    >
+      <Icon size={Math.round(size * 0.5)} style={{ color: tint }} strokeWidth={2} />
+    </div>
+  );
+}
+
 const initialMeals = [
-  { id: 1, name: "Colazione", time: "07:30", recipe: "Yogurt greco con frutti di bosco", kcal: 320, protein: 22, carbs: 30, fat: 10, completed: true, icon: Coffee },
-  { id: 2, name: "Spuntino", time: "10:30", recipe: "Mela e mandorle", kcal: 180, protein: 15, carbs: 18, fat: 5, completed: true, icon: Apple },
-  { id: 3, name: "Pranzo", time: "13:00", recipe: "Insalata di pollo e avocado", kcal: 640, protein: 42, carbs: 65, fat: 18, completed: true, icon: UtensilsCrossed },
-  { id: 4, name: "Merenda", time: "17:00", recipe: "Ricotta e frutta secca", kcal: 170, protein: 10, carbs: 20, fat: 6, completed: false, icon: Cookie },
-  { id: 5, name: "Cena", time: "20:00", recipe: "Seppie con verdure grigliate", kcal: 560, protein: 38, carbs: 40, fat: 20, completed: false, icon: Moon },
+  { id: 1, name: "Colazione", time: "07:30", recipe: "Yogurt greco con frutti di bosco", kcal: 320, protein: 22, carbs: 30, fat: 10, completed: true, icon: Coffee, tint: T.carbs },
+  { id: 2, name: "Spuntino", time: "10:30", recipe: "Mela e mandorle", kcal: 180, protein: 15, carbs: 18, fat: 5, completed: true, icon: Apple, tint: T.fat },
+  { id: 3, name: "Pranzo", time: "13:00", recipe: "Insalata di pollo e avocado", kcal: 640, protein: 42, carbs: 65, fat: 18, completed: true, icon: UtensilsCrossed, tint: T.sage },
+  { id: 4, name: "Merenda", time: "17:00", recipe: "Ricotta e frutta secca", kcal: 170, protein: 10, carbs: 20, fat: 6, completed: false, icon: Cookie, tint: "#B08968" },
+  { id: 5, name: "Cena", time: "20:00", recipe: "Seppie con verdure grigliate", kcal: 560, protein: 38, carbs: 40, fat: 20, completed: false, icon: Moon, tint: T.protein },
 ];
 
 function greeting() {
@@ -53,9 +66,7 @@ function todayLabel() {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/** Anello di progresso, in versione vetro: il "buco" centrale è
- * semi-trasparente con blur invece che bianco pieno. */
-function Ring({ value, max, size = 108, stroke = 9, color, label, sub }) {
+function Ring({ value, max, size = 108, stroke = 9, color, label, sub, icon: Icon }) {
   const pct = Math.max(0, Math.min(100, Math.round((value / max) * 100)));
   return (
     <div className="flex flex-col items-center">
@@ -71,10 +82,11 @@ function Ring({ value, max, size = 108, stroke = 9, color, label, sub }) {
           className="rounded-full bg-white/70 backdrop-blur-md flex flex-col items-center justify-center"
           style={{ width: size - stroke * 2, height: size - stroke * 2 }}
         >
-          <span className="font-mono-num text-xl font-semibold" style={{ color: T.ink }}>
+          <Icon size={18} style={{ color }} strokeWidth={2} />
+          <span className="font-mono-num text-lg font-semibold mt-0.5" style={{ color: T.ink }}>
             {value}
           </span>
-          <span className="text-[11px]" style={{ color: T.stone }}>
+          <span className="text-[10px]" style={{ color: T.stone }}>
             {sub}
           </span>
         </div>
@@ -87,7 +99,6 @@ function Ring({ value, max, size = 108, stroke = 9, color, label, sub }) {
 }
 
 function MealRow({ meal, onToggle }) {
-  const Icon = meal.icon;
   return (
     <div className={`${GLASS} rounded-2xl p-5 flex flex-col gap-3 transition`}>
       <div className="flex items-start justify-between">
@@ -112,7 +123,7 @@ function MealRow({ meal, onToggle }) {
             </span>
           </div>
         </div>
-        <Icon size={18} style={{ color: T.stone }} />
+        <IconChip icon={meal.icon} tint={meal.tint} />
       </div>
 
       <p className="text-sm" style={{ color: T.ink }}>
@@ -164,20 +175,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ background: T.paper }}>
-      {/* Sfumature morbide sullo sfondo: senza queste il vetro non avrebbe nulla da sfocare */}
       <div className="pointer-events-none fixed inset-0 -z-10">
-        <div
-          className="absolute -top-32 -left-24 w-96 h-96 rounded-full blur-3xl opacity-40"
-          style={{ background: T.sage }}
-        />
-        <div
-          className="absolute top-1/3 -right-32 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-30"
-          style={{ background: "#5B8DEF" }}
-        />
-        <div
-          className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-25"
-          style={{ background: T.carbs }}
-        />
+        <div className="absolute -top-32 -left-24 w-96 h-96 rounded-full blur-3xl opacity-40" style={{ background: T.sage }} />
+        <div className="absolute top-1/3 -right-32 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-30" style={{ background: "#5B8DEF" }} />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-25" style={{ background: T.carbs }} />
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-10 relative">
@@ -246,11 +247,7 @@ export default function Home() {
             <h2 className="text-lg font-semibold" style={{ color: T.ink }}>
               Pasti di oggi
             </h2>
-            <Link
-              to="/menu"
-              className="text-sm font-medium flex items-center gap-1"
-              style={{ color: T.sage }}
-            >
+            <Link to="/menu" className="text-sm font-medium flex items-center gap-1" style={{ color: T.sage }}>
               Piano completo <ArrowRight size={14} />
             </Link>
           </div>
@@ -269,9 +266,9 @@ export default function Home() {
         {/* Calorie / Acqua / Peso */}
         <div className={`${GLASS} rounded-2xl p-7 mb-10`}>
           <div className="grid grid-cols-3 gap-4">
-            <Ring value={calories} max={calorieTarget} color={T.carbs} label="Calorie" sub={`/ ${calorieTarget}`} />
-            <Ring value={water} max={waterTarget} color="#5B8DEF" label="Acqua" sub={`/ ${waterTarget} bicchieri`} />
-            <Ring value={weight} max={weight + 5} color={T.sage} label="Peso" sub="kg" />
+            <Ring value={calories} max={calorieTarget} color={T.carbs} label="Calorie" sub={`/ ${calorieTarget}`} icon={Flame} />
+            <Ring value={water} max={waterTarget} color="#5B8DEF" label="Acqua" sub={`/ ${waterTarget} bicchieri`} icon={Droplet} />
+            <Ring value={weight} max={weight + 5} color={T.sage} label="Peso" sub="kg" icon={Scale} />
           </div>
           <button
             onClick={() => setWater((w) => Math.min(w + 1, waterTarget))}
@@ -283,17 +280,17 @@ export default function Home() {
         </div>
 
         {/* Lista della spesa */}
-        <Link
-          to="/spesa"
-          className={`${GLASS} flex items-center justify-between rounded-2xl p-6 transition hover:bg-white/75`}
-        >
-          <div>
-            <h3 className="text-sm font-semibold" style={{ color: T.ink }}>
-              Lista della spesa
-            </h3>
-            <p className="text-xs mt-0.5" style={{ color: T.stone }}>
-              <span className="font-mono-num">{groceryLeft}</span> articoli ancora da comprare
-            </p>
+        <Link to="/spesa" className={`${GLASS} flex items-center justify-between rounded-2xl p-6 transition hover:bg-white/75`}>
+          <div className="flex items-center gap-4">
+            <IconChip icon={ShoppingCart} tint="#D4A24E" />
+            <div>
+              <h3 className="text-sm font-semibold" style={{ color: T.ink }}>
+                Lista della spesa
+              </h3>
+              <p className="text-xs mt-0.5" style={{ color: T.stone }}>
+                <span className="font-mono-num">{groceryLeft}</span> articoli ancora da comprare
+              </p>
+            </div>
           </div>
           <ArrowRight size={18} style={{ color: T.stone }} />
         </Link>
