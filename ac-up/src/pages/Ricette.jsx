@@ -2,6 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Search, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "../supabaseClient";
 
+const FOOD_GROUP_LABELS = {
+  carne: "Carne",
+  pesce: "Pesce",
+  legumi: "Legumi",
+  uova_latticini: "Uova & Latticini",
+  colazioni: "Colazioni",
+};
+
 function RecipeCard({ recipe }) {
   const [open, setOpen] = useState(false);
   const [ingredients, setIngredients] = useState(null);
@@ -25,7 +33,9 @@ function RecipeCard({ recipe }) {
       <div className="flex justify-between items-start">
         <div>
           <h3 className="text-xl font-bold">{recipe.name}</h3>
-          <p className="text-sm text-gray-500">{recipe.category}</p>
+          <p className="text-sm text-gray-500">
+            {FOOD_GROUP_LABELS[recipe.food_group] ?? recipe.category ?? ""}
+          </p>
         </div>
         {recipe.kcal != null && (
           <span className="rounded-full bg-green-100 text-green-700 px-3 py-1 text-sm font-semibold whitespace-nowrap">
@@ -78,6 +88,7 @@ function RecipeCard({ recipe }) {
 
 export default function Ricette() {
   const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("tutte");
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -103,9 +114,29 @@ export default function Ricette() {
     };
   }, []);
 
+  const categories = useMemo(() => {
+    const counts = {};
+    recipes.forEach((r) => {
+      const key = r.food_group ?? "altro";
+      counts[key] = (counts[key] ?? 0) + 1;
+    });
+    const known = Object.keys(FOOD_GROUP_LABELS).filter((k) => counts[k]);
+    const extra = Object.keys(counts).filter((k) => !FOOD_GROUP_LABELS[k]);
+    return [
+      { key: "tutte", label: "Tutte", count: recipes.length },
+      ...known.map((k) => ({ key: k, label: FOOD_GROUP_LABELS[k], count: counts[k] })),
+      ...extra.map((k) => ({ key: k, label: k, count: counts[k] })),
+    ];
+  }, [recipes]);
+
   const filtered = useMemo(
-    () => recipes.filter((r) => r.name.toLowerCase().includes(search.toLowerCase())),
-    [recipes, search]
+    () =>
+      recipes.filter(
+        (r) =>
+          (category === "tutte" || r.food_group === category) &&
+          r.name.toLowerCase().includes(search.toLowerCase())
+      ),
+    [recipes, search, category]
   );
 
   return (
@@ -115,7 +146,7 @@ export default function Ricette() {
         <p className="text-gray-500 mt-2">Archivio ricette AC UP, collegato al database.</p>
       </div>
 
-      <div className="relative mb-8">
+      <div className="relative mb-5">
         <Search className="absolute left-4 top-3 text-gray-400" size={18} />
         <input
           value={search}
@@ -124,6 +155,24 @@ export default function Ricette() {
           className="w-full rounded-xl border py-3 pl-11 pr-4 focus:ring-2 focus:ring-green-500 outline-none"
         />
       </div>
+
+      {!loading && !error && categories.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-8 pb-1">
+          {categories.map((c) => (
+            <button
+              key={c.key}
+              onClick={() => setCategory(c.key)}
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition ${
+                category === c.key
+                  ? "bg-green-600 text-white"
+                  : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              {c.label} <span className="opacity-70">({c.count})</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading && (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
