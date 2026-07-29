@@ -27,6 +27,11 @@ const T = {
   fat: "#62C370",
 };
 
+// Classi condivise per i pannelli in vetro: bianco semi-trasparente + blur,
+// bordo chiaro sottile, ombra leggera (una sola, come da Design System).
+const GLASS =
+  "bg-white/60 backdrop-blur-xl border border-white/70 shadow-[0_8px_30px_rgba(30,43,34,0.06)]";
+
 const initialMeals = [
   { id: 1, name: "Colazione", time: "07:30", recipe: "Yogurt greco con frutti di bosco", kcal: 320, protein: 22, carbs: 30, fat: 10, completed: true, icon: Coffee },
   { id: 2, name: "Spuntino", time: "10:30", recipe: "Mela e mandorle", kcal: 180, protein: 15, carbs: 18, fat: 5, completed: true, icon: Apple },
@@ -48,9 +53,8 @@ function todayLabel() {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/** Anello di progresso — stessa tecnica del .kcal-ring già previsto in index.css,
- * generalizzata con colore e valore dinamici. Usato solo per peso/calorie/acqua,
- * come indicato nel Design System. */
+/** Anello di progresso, in versione vetro: il "buco" centrale è
+ * semi-trasparente con blur invece che bianco pieno. */
 function Ring({ value, max, size = 108, stroke = 9, color, label, sub }) {
   const pct = Math.max(0, Math.min(100, Math.round((value / max) * 100)));
   return (
@@ -60,11 +64,11 @@ function Ring({ value, max, size = 108, stroke = 9, color, label, sub }) {
         style={{
           width: size,
           height: size,
-          background: `conic-gradient(${color} ${pct * 3.6}deg, ${T.mist} 0deg)`,
+          background: `conic-gradient(${color} ${pct * 3.6}deg, rgba(228,231,228,0.5) 0deg)`,
         }}
       >
         <div
-          className="rounded-full bg-white flex flex-col items-center justify-center"
+          className="rounded-full bg-white/70 backdrop-blur-md flex flex-col items-center justify-center"
           style={{ width: size - stroke * 2, height: size - stroke * 2 }}
         >
           <span className="font-mono-num text-xl font-semibold" style={{ color: T.ink }}>
@@ -85,10 +89,7 @@ function Ring({ value, max, size = 108, stroke = 9, color, label, sub }) {
 function MealRow({ meal, onToggle }) {
   const Icon = meal.icon;
   return (
-    <div
-      className="bg-white rounded-2xl p-5 flex flex-col gap-3 transition"
-      style={{ border: `1px solid ${T.mist}` }}
-    >
+    <div className={`${GLASS} rounded-2xl p-5 flex flex-col gap-3 transition`}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -96,7 +97,7 @@ function MealRow({ meal, onToggle }) {
             aria-label={meal.completed ? "Segna come da fare" : "Segna come fatto"}
             className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition"
             style={{
-              border: `1.5px solid ${meal.completed ? T.sage : T.mist}`,
+              border: `1.5px solid ${meal.completed ? T.sage : "rgba(30,43,34,0.2)"}`,
               background: meal.completed ? T.sage : "transparent",
             }}
           >
@@ -118,19 +119,19 @@ function MealRow({ meal, onToggle }) {
         {meal.recipe}
       </p>
 
-      <div className="flex items-center gap-4 pt-1" style={{ borderTop: `1px solid ${T.mist}` }}>
-        <span className="font-mono-num text-sm font-semibold pt-3" style={{ color: T.ink }}>
+      <div className="flex items-center gap-4 pt-3" style={{ borderTop: "1px solid rgba(30,43,34,0.08)" }}>
+        <span className="font-mono-num text-sm font-semibold" style={{ color: T.ink }}>
           {meal.kcal} <span className="text-[11px] font-normal" style={{ color: T.stone }}>kcal</span>
         </span>
-        <span className="flex items-center gap-1 text-xs pt-3">
+        <span className="flex items-center gap-1 text-xs">
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: T.protein }} />
           <span className="font-mono-num" style={{ color: T.stone }}>{meal.protein}g</span>
         </span>
-        <span className="flex items-center gap-1 text-xs pt-3">
+        <span className="flex items-center gap-1 text-xs">
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: T.carbs }} />
           <span className="font-mono-num" style={{ color: T.stone }}>{meal.carbs}g</span>
         </span>
-        <span className="flex items-center gap-1 text-xs pt-3">
+        <span className="flex items-center gap-1 text-xs">
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: T.fat }} />
           <span className="font-mono-num" style={{ color: T.stone }}>{meal.fat}g</span>
         </span>
@@ -155,8 +156,6 @@ export default function Home() {
 
   const doneMeals = meals.filter((m) => m.completed).length;
 
-  // Posizione illustrativa del peso attuale lungo una fascia di riferimento,
-  // per comunicare direzione e distanza dall'obiettivo senza inventare uno storico.
   const span = 30;
   const distance = weight - weightTarget;
   const trackPct = Math.max(4, Math.min(96, 100 - (distance / span) * 100));
@@ -164,8 +163,24 @@ export default function Home() {
   const groceryLeft = 4;
 
   return (
-    <div className="min-h-screen" style={{ background: T.paper }}>
-      <div className="max-w-6xl mx-auto px-6 py-10">
+    <div className="min-h-screen relative overflow-hidden" style={{ background: T.paper }}>
+      {/* Sfumature morbide sullo sfondo: senza queste il vetro non avrebbe nulla da sfocare */}
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div
+          className="absolute -top-32 -left-24 w-96 h-96 rounded-full blur-3xl opacity-40"
+          style={{ background: T.sage }}
+        />
+        <div
+          className="absolute top-1/3 -right-32 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-30"
+          style={{ background: "#5B8DEF" }}
+        />
+        <div
+          className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-25"
+          style={{ background: T.carbs }}
+        />
+      </div>
+
+      <div className="max-w-6xl mx-auto px-6 py-10 relative">
         {/* Header */}
         <div className="flex items-start justify-between mb-10">
           <div>
@@ -185,8 +200,8 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Obiettivo — visual "percorso", non hero a gradiente */}
-        <div className="bg-white rounded-2xl p-7 mb-10" style={{ border: `1px solid ${T.mist}` }}>
+        {/* Obiettivo */}
+        <div className={`${GLASS} rounded-2xl p-7 mb-10`}>
           <div className="flex items-center gap-2 mb-6">
             <Flag size={15} style={{ color: T.sage }} />
             <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: T.stone }}>
@@ -202,14 +217,14 @@ export default function Home() {
               <span className="text-sm ml-1" style={{ color: T.stone }}>kg oggi</span>
             </div>
             <div
-              className="text-xs font-semibold px-2.5 py-1 rounded-full font-mono-num"
-              style={{ background: "#EEF3EA", color: T.forest }}
+              className="text-xs font-semibold px-2.5 py-1 rounded-full font-mono-num backdrop-blur-sm"
+              style={{ background: "rgba(94,140,97,0.15)", color: T.forest }}
             >
               {weightDelta} kg questa settimana
             </div>
           </div>
 
-          <div className="relative h-1 rounded-full mb-2" style={{ background: T.mist }}>
+          <div className="relative h-1 rounded-full mb-2" style={{ background: "rgba(30,43,34,0.1)" }}>
             <div
               className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full"
               style={{ left: `${trackPct}%`, background: T.sage, transform: "translate(-50%, -50%)" }}
@@ -225,7 +240,7 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Pasti di oggi — griglia, come richiesto dal Design System */}
+        {/* Pasti di oggi */}
         <div className="mb-10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold" style={{ color: T.ink }}>
@@ -251,8 +266,8 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Calorie / Acqua / Peso — anelli, come richiesto dal Design System */}
-        <div className="bg-white rounded-2xl p-7 mb-10" style={{ border: `1px solid ${T.mist}` }}>
+        {/* Calorie / Acqua / Peso */}
+        <div className={`${GLASS} rounded-2xl p-7 mb-10`}>
           <div className="grid grid-cols-3 gap-4">
             <Ring value={calories} max={calorieTarget} color={T.carbs} label="Calorie" sub={`/ ${calorieTarget}`} />
             <Ring value={water} max={waterTarget} color="#5B8DEF" label="Acqua" sub={`/ ${waterTarget} bicchieri`} />
@@ -261,7 +276,7 @@ export default function Home() {
           <button
             onClick={() => setWater((w) => Math.min(w + 1, waterTarget))}
             className="w-full mt-6 pt-5 flex items-center justify-center gap-1.5 text-sm font-medium"
-            style={{ borderTop: `1px solid ${T.mist}`, color: T.stone }}
+            style={{ borderTop: "1px solid rgba(30,43,34,0.08)", color: T.stone }}
           >
             <Plus size={14} /> Aggiungi un bicchiere d'acqua
           </button>
@@ -270,8 +285,7 @@ export default function Home() {
         {/* Lista della spesa */}
         <Link
           to="/spesa"
-          className="flex items-center justify-between bg-white rounded-2xl p-6 transition hover:shadow-sm"
-          style={{ border: `1px solid ${T.mist}` }}
+          className={`${GLASS} flex items-center justify-between rounded-2xl p-6 transition hover:bg-white/75`}
         >
           <div>
             <h3 className="text-sm font-semibold" style={{ color: T.ink }}>
