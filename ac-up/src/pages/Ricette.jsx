@@ -85,6 +85,13 @@ export default function Ricette() {
   useEffect(() => {
     let active = true;
     (async () => {
+      if (!supabase) {
+        if (active) {
+          setError("Configurazione Supabase mancante o non valida.");
+          setLoading(false);
+        }
+        return;
+      }
       const { data, error } = await supabase.from("recipes").select("*").order("name");
       if (!active) return;
       if (error) setError(error.message);
