@@ -5,7 +5,9 @@ import {
   TrendingDown,
   TrendingUp,
   Coffee,
+  Apple,
   UtensilsCrossed,
+  Cookie,
   Moon,
   Check,
   Flame,
@@ -18,8 +20,10 @@ import {
 
 const initialMeals = [
   { id: 1, name: "Colazione", time: "07:30", recipe: "Overnight oats ai frutti di bosco", calories: 320, protein: 22, carbs: 30, fat: 10, completed: true, icon: Coffee },
-  { id: 2, name: "Pranzo", time: "13:00", recipe: "Insalata di pollo e quinoa", calories: 640, protein: 42, carbs: 65, fat: 18, completed: true, icon: UtensilsCrossed },
-  { id: 3, name: "Cena", time: "20:00", recipe: "Salmone al forno con verdure", calories: 560, protein: 38, carbs: 40, fat: 20, completed: false, icon: Moon },
+  { id: 2, name: "Spuntino", time: "10:30", recipe: "Yogurt greco e frutta secca", calories: 180, protein: 15, carbs: 18, fat: 5, completed: true, icon: Apple },
+  { id: 3, name: "Pranzo", time: "13:00", recipe: "Insalata di pollo e quinoa", calories: 640, protein: 42, carbs: 65, fat: 18, completed: true, icon: UtensilsCrossed },
+  { id: 4, name: "Merenda", time: "17:00", recipe: "Frutta fresca e mandorle", calories: 170, protein: 10, carbs: 20, fat: 6, completed: false, icon: Cookie },
+  { id: 5, name: "Cena", time: "20:00", recipe: "Salmone al forno con verdure", calories: 560, protein: 38, carbs: 40, fat: 20, completed: false, icon: Moon },
 ];
 
 function greeting() {
