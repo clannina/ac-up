@@ -1,41 +1,63 @@
 import { useState } from "react";
+import { T, GLASS } from "../lib/theme";
+import { Page, SectionTitle, PrimaryButton } from "../components/ui";
 
 export default function Profilo() {
-  const [profile,setProfile]=useState({
-    name:"Anna",
-    email:"anna@example.com",
-    weight:98,
-    target:75,
-    calories:1900,
-    water:8
+  const [profile, setProfile] = useState({
+    name: "Anna",
+    email: "anna@example.com",
+    weight: 98,
+    target: 75,
+    calories: 1900,
+    water: 8,
   });
 
-  const update=(e)=>{
-    const {name,value}=e.target;
-    setProfile(p=>({...p,[name]:value}));
+  const update = (e) => {
+    const { name, value } = e.target;
+    setProfile((p) => ({ ...p, [name]: value }));
   };
 
-  const Field=({label,name,type="text"})=>(
+  const inputStyle = {
+    border: `1px solid ${T.mist}`,
+    background: "rgba(255,255,255,0.7)",
+  };
+
+  const Field = ({ label, name, type = "text" }) => (
     <div>
-      <label className="block text-sm font-medium mb-2">{label}</label>
+      <label className="block text-sm font-medium mb-2" style={{ color: T.stone }}>{label}</label>
       <input
         type={type}
         name={name}
         value={profile[name]}
         onChange={update}
-        className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
+        className="w-full rounded-xl px-4 py-3 outline-none font-mono-num"
+        style={inputStyle}
       />
     </div>
   );
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10">
-      <h1 className="text-4xl font-bold">Profilo</h1>
-      <p className="text-gray-500 mt-2">Gestisci il tuo account e gli obiettivi.</p>
+    <Page maxWidth="max-w-4xl">
+      <SectionTitle className="text-3xl">Profilo</SectionTitle>
+      <p className="mt-2" style={{ color: T.stone }}>Gestisci il tuo account e gli obiettivi.</p>
 
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 mt-8 space-y-6">
-        <Field label="Nome" name="name" />
-        <Field label="Email" name="email" type="email" />
+      <div className={`${GLASS} rounded-2xl p-8 mt-8 space-y-6`}>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: T.stone }}>Nome</label>
+            <input
+              type="text" name="name" value={profile.name} onChange={update}
+              className="w-full rounded-xl px-4 py-3 outline-none" style={inputStyle}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: T.stone }}>Email</label>
+            <input
+              type="email" name="email" value={profile.email} onChange={update}
+              className="w-full rounded-xl px-4 py-3 outline-none" style={inputStyle}
+            />
+          </div>
+        </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           <Field label="Peso attuale (kg)" name="weight" type="number" />
@@ -48,23 +70,25 @@ export default function Profilo() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">Preferenze alimentari</label>
+          <label className="block text-sm font-medium mb-2" style={{ color: T.stone }}>Preferenze alimentari</label>
           <textarea
             rows="5"
-            className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-green-500 outline-none"
+            className="w-full rounded-xl px-4 py-3 outline-none"
+            style={inputStyle}
             placeholder="Es. niente pesce spada, salmone solo affumicato o in scatola..."
           />
         </div>
 
         <div className="flex justify-end gap-4 pt-4">
-          <button className="px-6 py-3 rounded-xl border hover:bg-gray-50">
+          <button
+            className="px-6 py-3 rounded-xl transition hover:bg-white/50"
+            style={{ border: `1px solid ${T.mist}`, color: T.ink }}
+          >
             Annulla
           </button>
-          <button className="px-6 py-3 rounded-xl bg-green-600 text-white hover:bg-green-700">
-            Salva profilo
-          </button>
+          <PrimaryButton className="px-6 py-3">Salva profilo</PrimaryButton>
         </div>
       </div>
-    </div>
+    </Page>
   );
 }

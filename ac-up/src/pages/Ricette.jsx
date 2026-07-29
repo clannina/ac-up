@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "../supabaseClient";
+import { T, GLASS } from "../lib/theme";
+import { Page, SectionTitle } from "../components/ui";
 
 const FOOD_GROUP_LABELS = {
   carne: "Carne",
@@ -29,53 +31,60 @@ function RecipeCard({ recipe }) {
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 hover:shadow-lg transition">
+    <div className={`${GLASS} rounded-2xl p-5 transition hover:bg-white/75`}>
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="text-xl font-bold">{recipe.name}</h3>
-          <p className="text-sm text-gray-500">
+          <h3 className="text-xl font-bold" style={{ color: T.ink }}>{recipe.name}</h3>
+          <p className="text-sm" style={{ color: T.stone }}>
             {FOOD_GROUP_LABELS[recipe.food_group] ?? recipe.category ?? ""}
           </p>
         </div>
         {recipe.kcal != null && (
-          <span className="rounded-full bg-green-100 text-green-700 px-3 py-1 text-sm font-semibold whitespace-nowrap">
+          <span
+            className="rounded-full px-3 py-1 text-sm font-semibold font-mono-num whitespace-nowrap"
+            style={{ background: `${T.sage}22`, color: T.forest }}
+          >
             {recipe.kcal} kcal
           </span>
         )}
       </div>
 
-      <div className="mt-4 flex items-center gap-4 text-sm text-gray-500">
+      <div className="mt-4 flex items-center gap-4 text-sm" style={{ color: T.stone }}>
         {recipe.prep_min != null && (
           <span className="flex items-center gap-1">
-            <Clock size={14} /> {recipe.prep_min} min
+            <Clock size={14} /> <span className="font-mono-num">{recipe.prep_min} min</span>
           </span>
         )}
         {recipe.difficulty && <span>{recipe.difficulty}</span>}
-        {recipe.servings && <span>{recipe.servings} porz.</span>}
+        {recipe.servings && <span className="font-mono-num">{recipe.servings} porz.</span>}
       </div>
 
       <div className="mt-6 flex justify-between items-center text-sm">
-        <span>🥩 {recipe.protein != null ? `${recipe.protein} g proteine` : "—"}</span>
+        <span className="flex items-center gap-1.5" style={{ color: T.stone }}>
+          <span className="w-1.5 h-1.5 rounded-full" style={{ background: T.protein }} />
+          <span className="font-mono-num">{recipe.protein != null ? `${recipe.protein} g proteine` : "—"}</span>
+        </span>
         <button
           onClick={toggleOpen}
-          className="rounded-xl bg-green-600 text-white px-4 py-2 hover:bg-green-700 flex items-center gap-1 transition"
+          className="rounded-xl text-white px-4 py-2 flex items-center gap-1 transition"
+          style={{ background: T.sage }}
         >
           Apri {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
       </div>
 
       {open && (
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          {loadingIng && <p className="text-sm text-gray-400">Carico ingredienti...</p>}
+        <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${T.mist}` }}>
+          {loadingIng && <p className="text-sm" style={{ color: T.stone }}>Carico ingredienti...</p>}
           {!loadingIng && ingredients?.length === 0 && (
-            <p className="text-sm text-gray-400">Nessun ingrediente registrato per questa ricetta.</p>
+            <p className="text-sm" style={{ color: T.stone }}>Nessun ingrediente registrato per questa ricetta.</p>
           )}
           {!loadingIng && ingredients?.length > 0 && (
-            <ul className="text-sm text-gray-600 space-y-1">
+            <ul className="text-sm space-y-1" style={{ color: T.ink }}>
               {ingredients.map((row, idx) => (
                 <li key={idx} className="flex justify-between">
                   <span>{row.ingredients?.name ?? "Ingrediente"}</span>
-                  <span className="text-gray-400">{row.grams} g</span>
+                  <span className="font-mono-num" style={{ color: T.stone }}>{row.grams} g</span>
                 </li>
               ))}
             </ul>
@@ -140,19 +149,20 @@ export default function Ricette() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10">
+    <Page>
       <div className="mb-8">
-        <h1 className="text-4xl font-bold">Ricette</h1>
-        <p className="text-gray-500 mt-2">Archivio ricette AC UP, collegato al database.</p>
+        <SectionTitle className="text-3xl">Ricette</SectionTitle>
+        <p className="mt-2" style={{ color: T.stone }}>Archivio ricette AC UP, collegato al database.</p>
       </div>
 
       <div className="relative mb-5">
-        <Search className="absolute left-4 top-3 text-gray-400" size={18} />
+        <Search className="absolute left-4 top-3" style={{ color: T.stone }} size={18} />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cerca una ricetta..."
-          className="w-full rounded-xl border py-3 pl-11 pr-4 focus:ring-2 focus:ring-green-500 outline-none"
+          className="w-full rounded-xl py-3 pl-11 pr-4 outline-none bg-white/70"
+          style={{ border: `1px solid ${T.mist}` }}
         />
       </div>
 
@@ -162,13 +172,14 @@ export default function Ricette() {
             <button
               key={c.key}
               onClick={() => setCategory(c.key)}
-              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition ${
+              className="shrink-0 rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition"
+              style={
                 category === c.key
-                  ? "bg-green-600 text-white"
-                  : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-              }`}
+                  ? { background: T.sage, color: "white" }
+                  : { background: "white", border: `1px solid ${T.mist}`, color: T.stone }
+              }
             >
-              {c.label} <span className="opacity-70">({c.count})</span>
+              {c.label} <span className="opacity-70 font-mono-num">({c.count})</span>
             </button>
           ))}
         </div>
@@ -177,19 +188,19 @@ export default function Ricette() {
       {loading && (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 h-40 animate-pulse" />
+            <div key={i} className={`${GLASS} rounded-2xl p-5 h-40 animate-pulse`} />
           ))}
         </div>
       )}
 
       {!loading && error && (
-        <div className="bg-red-50 border border-red-100 text-red-700 rounded-2xl p-5">
+        <div className="rounded-2xl p-5" style={{ background: `${T.coral}15`, border: `1px solid ${T.coral}40`, color: T.coral }}>
           Non riesco a caricare le ricette dal database ({error}). Controlla che l'app sia collegata a Supabase.
         </div>
       )}
 
       {!loading && !error && filtered.length === 0 && (
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-10 text-center text-gray-400">
+        <div className={`${GLASS} rounded-2xl p-10 text-center`} style={{ color: T.stone }}>
           Nessuna ricetta trovata.
         </div>
       )}
@@ -201,6 +212,6 @@ export default function Ricette() {
           ))}
         </div>
       )}
-    </div>
+    </Page>
   );
 }
