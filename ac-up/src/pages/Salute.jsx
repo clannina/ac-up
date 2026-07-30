@@ -52,6 +52,59 @@ function formatDate(d) {
 export default function Salute() {
   const { session } = useAuth();
 
+  // ---------- Misure corporee ----------
+  const [measurement, setMeasurement] = useState({ waist_cm: 108, chest_cm: 116, hips_cm: 122 });
+  const [editingMeasurements, setEditingMeasurements] = useState(false);
+  const [measureForm, setMeasureForm] = useState({ waist_cm: "", chest_cm: "", hips_cm: "" });
+  const [savingMeasure, setSavingMeasure] = useState(false);
+  const [measureSaved, setMeasureSaved] = useState(false);
+
+  const loadMeasurements = async () => {
+    if (!supabase || !session?.user?.id) return;
+    const { data } = await supabase
+      .from("measurements")
+      .select("*")
+      .eq("profile_id", session.user.id)
+      .order("log_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (data) setMeasurement(data);
+  };
+
+  useEffect(() => {
+    loadMeasurements();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id]);
+
+  const openMeasureEdit = () => {
+    setMeasureForm({
+      waist_cm: measurement.waist_cm ?? "",
+      chest_cm: measurement.chest_cm ?? "",
+      hips_cm: measurement.hips_cm ?? "",
+    });
+    setEditingMeasurements(true);
+  };
+
+  const saveMeasurements = async () => {
+    if (!supabase || !session?.user?.id) return;
+    setSavingMeasure(true);
+    const payload = {
+      profile_id: session.user.id,
+      log_date: new Date().toISOString().slice(0, 10),
+      waist_cm: measureForm.waist_cm ? Number(measureForm.waist_cm) : null,
+      chest_cm: measureForm.chest_cm ? Number(measureForm.chest_cm) : null,
+      hips_cm: measureForm.hips_cm ? Number(measureForm.hips_cm) : null,
+    };
+    const { error } = await supabase.from("measurements").insert(payload);
+    setSavingMeasure(false);
+    if (!error) {
+      setMeasurement(payload);
+      setEditingMeasurements(false);
+      setMeasureSaved(true);
+      setTimeout(() => setMeasureSaved(false), 2500);
+    }
+  };
+
   const [stats] = useState({
     weight: 98,
     target: 75,
@@ -282,12 +335,66 @@ export default function Salute() {
           <h2 className="text-lg font-bold uppercase tracking-wider mb-6" style={{ color: T.cream }}>Misure corporee</h2>
 
           <div className="space-y-4 text-white">
-            <div className="flex justify-between"><span>Vita</span><strong className="font-mono-num">{stats.waist} cm</strong></div>
-            <div className="flex justify-between"><span>Torace</span><strong className="font-mono-num">{stats.chest} cm</strong></div>
-            <div className="flex justify-between"><span>Fianchi</span><strong className="font-mono-num">{stats.hips} cm</strong></div>
+            <div className="flex justify-between"><span>Vita</span><strong className="font-mono-num">{measurement.waist_cm ?? "—"} cm</strong></div>
+            <div className="flex justify-between"><span>Torace</span><strong className="font-mono-num">{measurement.chest_cm ?? "—"} cm</strong></div>
+            <div className="flex justify-between"><span>Fianchi</span><strong className="font-mono-num">{measurement.hips_cm ?? "—"} cm</strong></div>
           </div>
 
-          <PrimaryButton className="mt-8 w-full">Aggiorna misure</PrimaryButton>
+          {!editingMeasurements && (
+            <PrimaryButton onClick={openMeasureEdit} className="mt-8 w-full">Aggiorna misure</PrimaryButton>
+          )}
+
+          {editingMeasurements && (
+            <div className="mt-6">
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-xs text-white/60 mb-1.5">Vita</label>
+                  <input
+                    type="number"
+                    value={measureForm.waist_cm}
+                    onChange={(e) => setMeasureForm((f) => ({ ...f, waist_cm: e.target.value }))}
+                    className="w-full rounded-xl px-3 py-2.5 outline-none font-mono-num text-sm"
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-white/60 mb-1.5">Torace</label>
+                  <input
+                    type="number"
+                    value={measureForm.chest_cm}
+                    onChange={(e) => setMeasureForm((f) => ({ ...f, chest_cm: e.target.value }))}
+                    className="w-full rounded-xl px-3 py-2.5 outline-none font-mono-num text-sm"
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-white/60 mb-1.5">Fianchi</label>
+                  <input
+                    type="number"
+                    value={measureForm.hips_cm}
+                    onChange={(e) => setMeasureForm((f) => ({ ...f, hips_cm: e.target.value }))}
+                    className="w-full rounded-xl px-3 py-2.5 outline-none font-mono-num text-sm"
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 mt-4">
+                <PrimaryButton onClick={saveMeasurements} disabled={savingMeasure} className="flex items-center gap-2 text-sm px-5 py-2.5">
+                  {savingMeasure && <Loader2 size={14} className="animate-spin" />} Salva
+                </PrimaryButton>
+                <button onClick={() => setEditingMeasurements(false)} className="flex items-center gap-1.5 text-sm text-white/70">
+                  <X size={14} /> Annulla
+                </button>
+              </div>
+            </div>
+          )}
+
+          {measureSaved && (
+            <span className="flex items-center gap-1.5 text-sm text-white mt-3">
+              <Check size={15} /> Salvato
+            </span>
+          )}
         </div>
       </div>
 
