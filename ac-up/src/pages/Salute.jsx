@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Scale, Droplet, Flame, Activity, Flag, HeartPulse, CalendarHeart, Loader2, Check } from "lucide-react";
+import { Scale, Droplet, Flame, Activity, Flag, HeartPulse, CalendarHeart, Loader2, Check, Pencil, Trash2, X } from "lucide-react";
 import { T, GLASS } from "../lib/theme";
 import { Page, SectionTitle, Ring, PrimaryButton } from "../components/ui";
 import { useAuth } from "../lib/AuthContext";
@@ -11,6 +11,22 @@ function pressureCategory(systolic, diastolic) {
   if (systolic < 130 && diastolic < 80) return { label: "Elevata", color: T.carbs };
   if (systolic < 140 || diastolic < 90) return { label: "Alta (stadio 1)", color: T.coral };
   return { label: "Alta (stadio 2)", color: T.coral };
+}
+
+function daysBetween(a, b) {
+  return Math.round((new Date(b) - new Date(a)) / 86400000);
+}
+
+// La durata del ciclo si calcola da sola dalla distanza tra gli inizi
+// registrati; con un solo ciclo in storico si usa una stima di base (28gg).
+function averageCycleLength(history) {
+  if (!history || history.length < 2) return 28;
+  const sorted = [...history].sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+  const gaps = [];
+  for (let i = 1; i < sorted.length; i++) {
+    gaps.push(daysBetween(sorted[i - 1].start_date, sorted[i].start_date));
+  }
+  return Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length);
 }
 
 function cycleInfo(startDateStr, cycleLength) {
@@ -29,7 +45,8 @@ function cycleInfo(startDateStr, cycleLength) {
 }
 
 function formatDate(d) {
-  return d.toLocaleDateString("it-IT", { day: "numeric", month: "long" });
+  const date = typeof d === "string" ? new Date(d) : d;
+  return date.toLocaleDateString("it-IT", { day: "numeric", month: "long" });
 }
 
 export default function Salute() {
@@ -54,87 +71,134 @@ export default function Salute() {
   const trackPct = Math.max(4, Math.min(96, 100 - (distance / span) * 100));
 
   // ---------- Pressione arteriosa ----------
-  const [latestBP, setLatestBP] = useState(null);
+  const [bpHistory, setBpHistory] = useState([]);
   const [bpForm, setBpForm] = useState({ systolic: "", diastolic: "", pulse: "" });
+  const [editingBpId, setEditingBpId] = useState(null);
   const [savingBP, setSavingBP] = useState(false);
   const [bpSaved, setBpSaved] = useState(false);
 
   // ---------- Ciclo mestruale ----------
-  const [latestCycle, setLatestCycle] = useState(null);
-  const [cycleForm, setCycleForm] = useState({ start_date: "", cycle_length: 28 });
+  const [cycleHistory, setCycleHistory] = useState([]);
+  const [cycleForm, setCycleForm] = useState({ start_date: "", end_date: "" });
+  const [editingCycleId, setEditingCycleId] = useState(null);
   const [savingCycle, setSavingCycle] = useState(false);
   const [cycleSaved, setCycleSaved] = useState(false);
 
-  useEffect(() => {
+  const loadBpHistory = async () => {
     if (!supabase || !session?.user?.id) return;
-    (async () => {
-      const { data: bp } = await supabase
-        .from("blood_pressure_logs")
-        .select("*")
-        .eq("profile_id", session.user.id)
-        .order("log_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (bp) setLatestBP(bp);
+    const { data } = await supabase
+      .from("blood_pressure_logs")
+      .select("*")
+      .eq("profile_id", session.user.id)
+      .order("log_date", { ascending: false })
+      .limit(20);
+    setBpHistory(data ?? []);
+  };
 
-      const { data: cycle } = await supabase
-        .from("cycle_logs")
-        .select("*")
-        .eq("profile_id", session.user.id)
-        .order("start_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (cycle) setLatestCycle(cycle);
-    })();
+  const loadCycleHistory = async () => {
+    if (!supabase || !session?.user?.id) return;
+    const { data } = await supabase
+      .from("cycle_logs")
+      .select("*")
+      .eq("profile_id", session.user.id)
+      .order("start_date", { ascending: false })
+      .limit(20);
+    setCycleHistory(data ?? []);
+  };
+
+  useEffect(() => {
+    loadBpHistory();
+    loadCycleHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id]);
+
+  const startEditBp = (entry) => {
+    setEditingBpId(entry.id);
+    setBpForm({ systolic: entry.systolic, diastolic: entry.diastolic, pulse: entry.pulse ?? "" });
+  };
+  const cancelEditBp = () => {
+    setEditingBpId(null);
+    setBpForm({ systolic: "", diastolic: "", pulse: "" });
+  };
 
   const saveBP = async () => {
     const systolic = Number(bpForm.systolic);
     const diastolic = Number(bpForm.diastolic);
     if (!systolic || !diastolic || !supabase || !session?.user?.id) return;
     setSavingBP(true);
-    const { data, error } = await supabase
-      .from("blood_pressure_logs")
-      .insert({
-        profile_id: session.user.id,
-        systolic,
-        diastolic,
-        pulse: bpForm.pulse ? Number(bpForm.pulse) : null,
-      })
-      .select()
-      .single();
+
+    const payload = {
+      systolic,
+      diastolic,
+      pulse: bpForm.pulse ? Number(bpForm.pulse) : null,
+    };
+
+    const { error } = editingBpId
+      ? await supabase.from("blood_pressure_logs").update(payload).eq("id", editingBpId)
+      : await supabase.from("blood_pressure_logs").insert({ ...payload, profile_id: session.user.id });
+
     setSavingBP(false);
     if (!error) {
-      setLatestBP(data);
+      await loadBpHistory();
       setBpForm({ systolic: "", diastolic: "", pulse: "" });
+      setEditingBpId(null);
       setBpSaved(true);
       setTimeout(() => setBpSaved(false), 2500);
     }
   };
 
+  const deleteBp = async (id) => {
+    if (!supabase || !window.confirm("Eliminare questa misurazione?")) return;
+    await supabase.from("blood_pressure_logs").delete().eq("id", id);
+    if (editingBpId === id) cancelEditBp();
+    loadBpHistory();
+  };
+
+  const startEditCycle = (entry) => {
+    setEditingCycleId(entry.id);
+    setCycleForm({ start_date: entry.start_date, end_date: entry.end_date ?? "" });
+  };
+  const cancelEditCycle = () => {
+    setEditingCycleId(null);
+    setCycleForm({ start_date: "", end_date: "" });
+  };
+
   const saveCycle = async () => {
     if (!cycleForm.start_date || !supabase || !session?.user?.id) return;
     setSavingCycle(true);
-    const { data, error } = await supabase
-      .from("cycle_logs")
-      .insert({
-        profile_id: session.user.id,
-        start_date: cycleForm.start_date,
-        cycle_length: Number(cycleForm.cycle_length) || 28,
-      })
-      .select()
-      .single();
+
+    const payload = {
+      start_date: cycleForm.start_date,
+      end_date: cycleForm.end_date || null,
+    };
+
+    const { error } = editingCycleId
+      ? await supabase.from("cycle_logs").update(payload).eq("id", editingCycleId)
+      : await supabase.from("cycle_logs").insert({ ...payload, profile_id: session.user.id });
+
     setSavingCycle(false);
     if (!error) {
-      setLatestCycle(data);
-      setCycleForm({ start_date: "", cycle_length: 28 });
+      await loadCycleHistory();
+      setCycleForm({ start_date: "", end_date: "" });
+      setEditingCycleId(null);
       setCycleSaved(true);
       setTimeout(() => setCycleSaved(false), 2500);
     }
   };
 
+  const deleteCycle = async (id) => {
+    if (!supabase || !window.confirm("Eliminare questo ciclo dallo storico?")) return;
+    await supabase.from("cycle_logs").delete().eq("id", id);
+    if (editingCycleId === id) cancelEditCycle();
+    loadCycleHistory();
+  };
+
+  const latestBP = bpHistory[0] ?? null;
   const bpCat = latestBP ? pressureCategory(latestBP.systolic, latestBP.diastolic) : null;
-  const cInfo = latestCycle ? cycleInfo(latestCycle.start_date, latestCycle.cycle_length || 28) : null;
+
+  const latestCycle = cycleHistory[0] ?? null;
+  const avgCycleLength = averageCycleLength(cycleHistory);
+  const cInfo = latestCycle ? cycleInfo(latestCycle.start_date, avgCycleLength) : null;
 
   const inputStyle = {
     border: "1px solid rgba(255,255,255,0.3)",
@@ -243,10 +307,7 @@ export default function Salute() {
               <span className="text-sm ml-1 text-white/70">mmHg</span>
               {latestBP.pulse && <p className="text-sm text-white/60 mt-1 font-mono-num">{latestBP.pulse} bpm</p>}
             </div>
-            <span
-              className="text-xs font-bold px-3 py-1.5 rounded-full bg-white"
-              style={{ color: bpCat.color }}
-            >
+            <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white" style={{ color: bpCat.color }}>
               {bpCat.label}
             </span>
           </div>
@@ -282,8 +343,13 @@ export default function Salute() {
 
         <div className="flex items-center gap-3 mt-4">
           <PrimaryButton onClick={saveBP} disabled={savingBP} className="flex items-center gap-2 text-sm px-5 py-2.5">
-            {savingBP && <Loader2 size={14} className="animate-spin" />} Registra
+            {savingBP && <Loader2 size={14} className="animate-spin" />} {editingBpId ? "Salva modifica" : "Registra"}
           </PrimaryButton>
+          {editingBpId && (
+            <button onClick={cancelEditBp} className="flex items-center gap-1.5 text-sm text-white/70">
+              <X size={14} /> Annulla
+            </button>
+          )}
           {bpSaved && (
             <span className="flex items-center gap-1.5 text-sm text-white">
               <Check size={15} /> Salvato
@@ -291,9 +357,32 @@ export default function Salute() {
           )}
         </div>
 
-        <p className="text-xs text-white/50 mt-4">
+        <p className="text-xs text-white/50 mt-4 mb-2">
           Valori puramente indicativi, non sostituiscono il parere del tuo medico.
         </p>
+
+        {bpHistory.length > 0 && (
+          <div className="mt-5 pt-5 space-y-1" style={{ borderTop: "1px solid rgba(255,255,255,0.15)" }}>
+            <p className="text-xs uppercase tracking-wider text-white/50 mb-2">Storico</p>
+            {bpHistory.map((entry) => (
+              <div key={entry.id} className="flex items-center justify-between py-2 text-sm">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono-num text-white/60 text-xs">{formatDate(entry.log_date)}</span>
+                  <span className="font-mono-num text-white font-semibold">{entry.systolic}/{entry.diastolic}</span>
+                  {entry.pulse && <span className="font-mono-num text-white/50 text-xs">{entry.pulse} bpm</span>}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => startEditBp(entry)} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/15">
+                    <Pencil size={13} className="text-white/70" />
+                  </button>
+                  <button onClick={() => deleteBp(entry.id)} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/15">
+                    <Trash2 size={13} className="text-white/70" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Ciclo mestruale */}
@@ -315,6 +404,9 @@ export default function Salute() {
                 {formatDate(cInfo.nextDate)} <span className="font-mono-num text-white/70 text-sm">(tra {cInfo.daysUntilNext}g)</span>
               </p>
             </div>
+            <p className="col-span-2 text-xs text-white/50 -mt-2">
+              Durata media calcolata dallo storico: <span className="font-mono-num">{avgCycleLength}</span> giorni
+            </p>
             {cInfo.inFertileWindow && (
               <div className="col-span-2 text-xs font-semibold px-3 py-2 rounded-xl w-fit bg-white" style={{ color: T.coral }}>
                 Probabile finestra fertile
@@ -326,7 +418,7 @@ export default function Salute() {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-white/60 mb-1.5">Data inizio ultimo ciclo</label>
+            <label className="block text-xs text-white/60 mb-1.5">Data inizio</label>
             <input
               type="date"
               value={cycleForm.start_date}
@@ -336,11 +428,11 @@ export default function Salute() {
             />
           </div>
           <div>
-            <label className="block text-xs text-white/60 mb-1.5">Durata media ciclo (giorni)</label>
+            <label className="block text-xs text-white/60 mb-1.5">Data fine (facoltativa)</label>
             <input
-              type="number"
-              value={cycleForm.cycle_length}
-              onChange={(e) => setCycleForm((f) => ({ ...f, cycle_length: e.target.value }))}
+              type="date"
+              value={cycleForm.end_date}
+              onChange={(e) => setCycleForm((f) => ({ ...f, end_date: e.target.value }))}
               className="w-full rounded-xl px-3 py-2.5 outline-none font-mono-num text-sm"
               style={inputStyle}
             />
@@ -349,8 +441,13 @@ export default function Salute() {
 
         <div className="flex items-center gap-3 mt-4">
           <PrimaryButton onClick={saveCycle} disabled={savingCycle} className="flex items-center gap-2 text-sm px-5 py-2.5">
-            {savingCycle && <Loader2 size={14} className="animate-spin" />} Registra
+            {savingCycle && <Loader2 size={14} className="animate-spin" />} {editingCycleId ? "Salva modifica" : "Registra"}
           </PrimaryButton>
+          {editingCycleId && (
+            <button onClick={cancelEditCycle} className="flex items-center gap-1.5 text-sm text-white/70">
+              <X size={14} /> Annulla
+            </button>
+          )}
           {cycleSaved && (
             <span className="flex items-center gap-1.5 text-sm text-white">
               <Check size={15} /> Salvato
@@ -358,9 +455,35 @@ export default function Salute() {
           )}
         </div>
 
-        <p className="text-xs text-white/50 mt-4">
-          Stime approssimative basate sulla durata media del ciclo, non un metodo contraccettivo.
+        <p className="text-xs text-white/50 mt-4 mb-2">
+          Stime approssimative basate sullo storico registrato, non un metodo contraccettivo.
         </p>
+
+        {cycleHistory.length > 0 && (
+          <div className="mt-5 pt-5 space-y-1" style={{ borderTop: "1px solid rgba(255,255,255,0.15)" }}>
+            <p className="text-xs uppercase tracking-wider text-white/50 mb-2">Storico</p>
+            {cycleHistory.map((entry) => (
+              <div key={entry.id} className="flex items-center justify-between py-2 text-sm">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono-num text-white font-semibold">{formatDate(entry.start_date)}</span>
+                  {entry.end_date && (
+                    <span className="font-mono-num text-white/60 text-xs">
+                      → {formatDate(entry.end_date)} ({daysBetween(entry.start_date, entry.end_date) + 1}g)
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => startEditCycle(entry)} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/15">
+                    <Pencil size={13} className="text-white/70" />
+                  </button>
+                  <button onClick={() => deleteCycle(entry.id)} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/15">
+                    <Trash2 size={13} className="text-white/70" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </Page>
   );
