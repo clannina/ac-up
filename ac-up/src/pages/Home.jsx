@@ -53,6 +53,15 @@ const MEAL_FOOD_GROUPS = {
   Cena: ["carne", "pesce", "legumi"],
 };
 
+// Dentro "uova_latticini" ci sono anche piatti cucinati (frittate, omelette,
+// uova strapazzate) che non sono spuntini veloci: per Spuntino/Merenda li
+// escludiamo, tenendo solo le combinazioni assemblate al volo.
+const COOKED_DISH_PREFIXES = ["Frittata", "Omelette", "Uova strapazzate"];
+function isQuickSnack(name) {
+  return !COOKED_DISH_PREFIXES.some((p) => name.startsWith(p));
+}
+const SNACK_SLOTS = new Set(["Spuntino", "Merenda"]);
+
 function greeting() {
   const h = new Date().getHours();
   if (h < 12) return "Buongiorno";
@@ -81,6 +90,7 @@ function MealRow({ meal, onToggle, onSwap, dailyTotal, calorieTarget, locked }) 
 
       const list = error ? [] : (data ?? [])
         .filter((r) => r.name !== meal.recipe && r.kcal != null)
+        .filter((r) => !SNACK_SLOTS.has(meal.name) || isQuickSnack(r.name))
         .sort((a, b) => Math.abs(a.kcal - meal.kcal) - Math.abs(b.kcal - meal.kcal))
         .slice(0, 8);
 

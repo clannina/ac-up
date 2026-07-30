@@ -7,11 +7,18 @@ import { supabase } from "../supabaseClient";
 
 const SLOTS = [
   { key: "Colazione", time: "07:30", groups: ["colazioni"] },
-  { key: "Spuntino", time: "10:30", groups: ["colazioni", "uova_latticini"] },
+  { key: "Spuntino", time: "10:30", groups: ["colazioni", "uova_latticini"], snackOnly: true },
   { key: "Pranzo", time: "13:00", groups: ["carne", "pesce", "legumi"], preferMealPrep: true },
-  { key: "Merenda", time: "17:00", groups: ["colazioni", "uova_latticini"] },
+  { key: "Merenda", time: "17:00", groups: ["colazioni", "uova_latticini"], snackOnly: true },
   { key: "Cena", time: "20:00", groups: ["carne", "pesce", "legumi"] },
 ];
+
+// Dentro "uova_latticini" ci sono anche piatti cucinati (frittate, omelette,
+// uova strapazzate): non sono spuntini veloci, li escludiamo da Spuntino/Merenda.
+const COOKED_DISH_PREFIXES = ["Frittata", "Omelette", "Uova strapazzate"];
+function isQuickSnack(name) {
+  return !COOKED_DISH_PREFIXES.some((p) => name.startsWith(p));
+}
 
 const DAY_LABELS = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 const MAX_CARNE_PER_WEEK = 3; // "ridurre la carne senza eliminarla"
@@ -49,7 +56,7 @@ function pickWeighted(pool, weights) {
   return pool[pool.length - 1];
 }
 
-function pickRecipe(byGroup, groups, used, preferMealPrep, carneCount) {
+function pickRecipe(byGroup, groups, used, preferMealPrep, carneCount, snackOnly) {
   let candidateGroups = groups;
   if (groups.includes("carne") && carneCount >= MAX_CARNE_PER_WEEK) {
     candidateGroups = groups.filter((g) => g !== "carne");
@@ -58,11 +65,15 @@ function pickRecipe(byGroup, groups, used, preferMealPrep, carneCount) {
   const group = pickWeighted(candidateGroups, weights);
 
   let pool = (byGroup[group] || []).filter((r) => !used.has(r.id));
+  if (snackOnly) pool = pool.filter((r) => isQuickSnack(r.name));
   if (preferMealPrep) {
     const mealPrepPool = pool.filter((r) => r.meal_prep);
     if (mealPrepPool.length > 0) pool = mealPrepPool;
   }
-  if (pool.length === 0) pool = (byGroup[group] || []); // riusa se il gruppo si esaurisce
+  if (pool.length === 0) {
+    // riusa il gruppo intero se si esaurisce, mantenendo comunque il filtro spuntino
+    pool = (byGroup[group] || []).filter((r) => !snackOnly || isQuickSnack(r.name));
+  }
 
   const recipe = pool[Math.floor(Math.random() * pool.length)];
   return { recipe, group };
@@ -74,7 +85,7 @@ function generateWeek(byGroup, dates) {
 
   return dates.map((date) => {
     const meals = SLOTS.map((slot) => {
-      const { recipe, group } = pickRecipe(byGroup, slot.groups, used, slot.preferMealPrep, carneCount);
+      const { recipe, group } = pickRecipe(byGroup, slot.groups, used, slot.preferMealPrep, carneCount, slot.snackOnly);
       if (recipe) {
         used.add(recipe.id);
         if (group === "carne") carneCount++;
@@ -220,7 +231,7 @@ export default function Menu() {
       const used = new Set(
         prev.flatMap((d) => d.meals.map((m) => m.recipe?.id)).filter(Boolean)
       );
-      const { recipe } = pickRecipe(byGroup, slotDef.groups, used, slotDef.preferMealPrep, 0);
+      const { recipe } = pickRecipe(byGroup, slotDef.groups, used, slotDef.preferMealPrep, 0, slotDef.snackOnly);
       return prev.map((d) =>
         d.dayIndex !== dayIndex
           ? d
