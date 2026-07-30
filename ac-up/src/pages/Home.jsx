@@ -15,6 +15,8 @@ import {
   ChevronDown,
   ChevronUp,
   Repeat,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import { T, GLASS } from "../lib/theme";
 import { Page, SectionTitle, IconChip, Ring } from "../components/ui";
@@ -64,7 +66,7 @@ function todayLabel() {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function MealRow({ meal, onToggle, onSwap, dailyTotal, calorieTarget }) {
+function MealRow({ meal, onToggle, onSwap, dailyTotal, calorieTarget, locked }) {
   const [open, setOpen] = useState(false);
   const [alternatives, setAlternatives] = useState(null);
   const [loadingAlts, setLoadingAlts] = useState(false);
@@ -94,7 +96,7 @@ function MealRow({ meal, onToggle, onSwap, dailyTotal, calorieTarget }) {
   };
 
   return (
-    <div className={`${GLASS} rounded-[28px] p-5 flex flex-col gap-3 transition`}>
+    <div className={`${GLASS} rounded-[28px] p-5 flex flex-col gap-3 transition overflow-hidden`}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -133,21 +135,23 @@ function MealRow({ meal, onToggle, onSwap, dailyTotal, calorieTarget }) {
         </span>
       </div>
 
-      <button
-        onClick={toggleOpen}
-        className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold text-white pt-1"
-      >
-        <Repeat size={14} /> Scegli alternativa {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-      </button>
+      {!locked && (
+        <button
+          onClick={toggleOpen}
+          className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold text-white pt-1"
+        >
+          <Repeat size={14} /> Scegli alternativa {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+        </button>
+      )}
 
-      {open && (
-        <div className="pt-2 -mx-1">
-          {loadingAlts && <p className="text-sm text-white/70 px-1">Cerco alternative...</p>}
+      {!locked && open && (
+        <div className="pt-2">
+          {loadingAlts && <p className="text-sm text-white/70">Cerco alternative...</p>}
           {!loadingAlts && alternatives?.length === 0 && (
-            <p className="text-sm text-white/70 px-1">Nessuna alternativa trovata per questo pasto.</p>
+            <p className="text-sm text-white/70">Nessuna alternativa trovata per questo pasto.</p>
           )}
           {!loadingAlts && alternatives?.length > 0 && (
-            <div className="space-y-1.5 max-h-72 overflow-y-auto px-1">
+            <div className="space-y-1.5 max-h-72 overflow-y-auto overflow-x-hidden -mr-1 pr-1">
               {alternatives.map((alt) => {
                 const wouldBeTotal = dailyTotal - meal.kcal + alt.kcal;
                 const overBudget = wouldBeTotal > calorieTarget;
@@ -155,18 +159,23 @@ function MealRow({ meal, onToggle, onSwap, dailyTotal, calorieTarget }) {
                   <button
                     key={alt.id}
                     onClick={() => chooseAlternative(alt)}
-                    className="w-full flex items-center justify-between rounded-2xl p-3 text-left transition hover:bg-white/15"
+                    className="w-full flex items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/15 overflow-hidden"
                     style={{ background: "rgba(255,255,255,0.08)" }}
                   >
-                    <div className="min-w-0">
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-white truncate">{alt.name}</p>
-                      <p className="text-xs mt-0.5" style={{ color: overBudget ? "#FFD7C9" : "rgba(255,255,255,0.7)" }}>
+                      <p
+                        className="text-xs mt-0.5 truncate"
+                        style={{ color: overBudget ? "#FFD7C9" : "rgba(255,255,255,0.7)" }}
+                      >
                         {overBudget
                           ? `Sfora il budget di ${wouldBeTotal - calorieTarget} kcal`
                           : "Entro il budget di oggi"}
                       </p>
                     </div>
-                    <span className="font-mono-num text-sm font-bold text-white shrink-0 ml-3">{alt.kcal} kcal</span>
+                    <span className="font-mono-num text-sm font-bold text-white shrink-0 whitespace-nowrap">
+                      {alt.kcal} kcal
+                    </span>
                   </button>
                 );
               })}
@@ -182,6 +191,7 @@ export default function Home() {
   const { session, profile } = useAuth();
   const [meals, setMeals] = useState(initialMeals);
   const [water, setWater] = useState(6);
+  const [planConfirmed, setPlanConfirmed] = useState(false);
 
   const displayName =
     profile?.display_name || session?.user?.email?.split("@")[0] || "";
@@ -247,11 +257,38 @@ export default function Home() {
         <div className="grid md:grid-cols-2 gap-4">
           {meals.map((meal, i) => (
             <div key={meal.id} className={i === meals.length - 1 && meals.length % 2 === 1 ? "md:col-span-2" : ""}>
-              <MealRow meal={meal} onToggle={toggleMeal} onSwap={swapMeal} dailyTotal={calories} calorieTarget={calorieTarget} />
+              <MealRow
+                meal={meal}
+                onToggle={toggleMeal}
+                onSwap={swapMeal}
+                dailyTotal={calories}
+                calorieTarget={calorieTarget}
+                locked={planConfirmed}
+              />
             </div>
           ))}
         </div>
-        <p className="text-xs mt-3 font-mono-num text-white/70">{doneMeals} di {meals.length} completati</p>
+
+        <div className="flex items-center justify-between mt-3">
+          <p className="text-xs font-mono-num text-white/70">{doneMeals} di {meals.length} completati</p>
+
+          {!planConfirmed ? (
+            <button
+              onClick={() => setPlanConfirmed(true)}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-white"
+              style={{ color: T.forest }}
+            >
+              <Lock size={13} /> Conferma il piano di oggi
+            </button>
+          ) : (
+            <button
+              onClick={() => setPlanConfirmed(false)}
+              className="flex items-center gap-1.5 text-xs font-semibold text-white"
+            >
+              <Unlock size={13} /> Piano confermato · Modifica ancora
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Calorie / Acqua — il Peso è ora in Salute */}
