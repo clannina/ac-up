@@ -4,6 +4,7 @@ import { T, GLASS } from "../lib/theme";
 import { Page, SectionTitle, PrimaryButton } from "../components/ui";
 import { useAuth } from "../lib/AuthContext";
 import { supabase } from "../supabaseClient";
+import { nextWeekDates, toISODate, formatShortDate } from "../lib/week";
 
 const SLOTS = [
   { key: "Colazione", time: "07:30", groups: ["colazioni"] },
@@ -22,29 +23,6 @@ function isQuickSnack(name) {
 
 const DAY_LABELS = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 const MAX_CARNE_PER_WEEK = 3; // "ridurre la carne senza eliminarla"
-
-function toISODate(d) {
-  return d.toISOString().slice(0, 10);
-}
-
-function formatShortDate(d) {
-  return d.toLocaleDateString("it-IT", { day: "numeric", month: "short" });
-}
-
-// La settimana successiva (lun-dom): è uno strumento di pianificazione
-// in avanti, pensato apposta per prepararlo la domenica.
-function nextWeekDates() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const offsetToMonday = (1 - today.getDay() + 7) % 7;
-  const monday = new Date(today);
-  monday.setDate(monday.getDate() + offsetToMonday);
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(d.getDate() + i);
-    return d;
-  });
-}
 
 function pickWeighted(pool, weights) {
   const total = weights.reduce((a, b) => a + b, 0);
