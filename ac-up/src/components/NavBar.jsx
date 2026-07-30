@@ -15,11 +15,11 @@ export default function NavBar() {
   return (
     <nav className="fixed bottom-4 left-4 right-4 z-40">
       <div
-        className="max-w-xl mx-auto rounded-full flex justify-around py-2 px-1 backdrop-blur-xl"
+        className="max-w-xl mx-auto rounded-full flex justify-around py-2 px-1 backdrop-blur-2xl"
         style={{
-          background: "rgba(255,255,255,0.75)",
-          border: "1px solid rgba(255,255,255,0.7)",
-          boxShadow: "0 8px 30px rgba(30,43,34,0.10)",
+          background: "rgba(255,255,255,0.18)",
+          border: "1px solid rgba(255,255,255,0.28)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
         }}
       >
         {LINKS.map(({ to, label, icon: Icon, end }) => (
@@ -30,8 +30,8 @@ export default function NavBar() {
             className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-2xl text-[10px] transition-colors"
             style={({ isActive }) =>
               isActive
-                ? { background: `${T.sage}22`, color: T.forest }
-                : { color: T.stone }
+                ? { background: "rgba(255,255,255,0.95)", color: T.forest }
+                : { color: "rgba(255,255,255,0.85)" }
             }
           >
             <Icon size={18} />
