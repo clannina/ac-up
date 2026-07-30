@@ -132,9 +132,8 @@ export default function Home() {
         </Link>
       </div>
 
-      {/* Data + messaggio positivo, al posto della card Obiettivo (spostata in Profilo) */}
+      {/* Messaggio positivo, al posto della card Obiettivo (spostata in Salute) */}
       <div className={`${GLASS} rounded-[28px] p-7 mb-10`}>
-        <p className="font-mono-num text-xs uppercase tracking-wider text-white/70 mb-3">{todayLabel()}</p>
         <div className="flex items-start gap-3">
           <span className="text-3xl leading-none">{message.emoji}</span>
           <p className="text-2xl font-semibold text-white leading-snug">{message.text}</p>
