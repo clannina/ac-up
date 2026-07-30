@@ -202,7 +202,7 @@ function MealRow({ meal, onToggle, onSwap, dailyTotal, calorieTarget, locked }) 
 export default function Home() {
   const { session, profile } = useAuth();
   const [meals, setMeals] = useState(initialMeals);
-  const [water, setWater] = useState(6);
+  const [water, setWater] = useState(0);
   const [planConfirmed, setPlanConfirmed] = useState(false);
 
   const displayName =
