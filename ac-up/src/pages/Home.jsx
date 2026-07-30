@@ -45,13 +45,13 @@ const initialMeals = [
 ];
 
 // A quale gruppo alimentare (tra le 150+ ricette) attingere per ciascun pasto.
-// "spuntini" è la lista precisa (yogurt+frutta, frutta+frutta secca, ecc.)
-// pensata apposta per uno spuntino vero — usata sia per Spuntino che Merenda.
+// "spuntini" e "merende" sono liste precise pensate apposta per gli spuntini:
+// la seconda privilegia opzioni senza bisogno del frigo, per l'ufficio.
 const MEAL_FOOD_GROUPS = {
   Colazione: ["colazioni"],
   Spuntino: ["spuntini"],
   Pranzo: ["carne", "pesce", "legumi"],
-  Merenda: ["spuntini"],
+  Merenda: ["merende"],
   Cena: ["carne", "pesce", "legumi"],
 };
 
