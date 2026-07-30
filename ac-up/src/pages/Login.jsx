@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import { T, GLASS } from "../lib/theme";
 import { PrimaryButton } from "../components/ui";
 import { useAuth } from "../lib/AuthContext";
@@ -9,6 +9,7 @@ export default function Login() {
   const [mode, setMode] = useState("signin"); // "signin" | "signup"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [info, setInfo] = useState(null);
@@ -64,15 +65,25 @@ export default function Login() {
           <div className="relative">
             <Lock className="absolute left-4 top-3.5" size={18} style={{ color: T.stone }} />
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               required
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full rounded-xl pl-11 pr-4 py-3 outline-none bg-white/70"
+              className="w-full rounded-xl pl-11 pr-11 py-3 outline-none bg-white/70"
               style={{ border: `1px solid ${T.mist}` }}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-4 top-3.5"
+              style={{ color: T.stone }}
+              aria-label={showPassword ? "Nascondi password" : "Mostra password"}
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
 
           {error && (
