@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Share2, Mail, MessageCircle } from "lucide-react";
+import { ArrowRight, Share2, Mail, MessageCircle, RotateCcw } from "lucide-react";
 import { T, GLASS } from "../lib/theme";
 import { Page, SectionTitle, PrimaryButton } from "../components/ui";
 import { useAuth } from "../lib/AuthContext";
@@ -14,11 +14,14 @@ function formatQty(grams) {
   return `${Math.round(grams)} g`;
 }
 
-function buildShareText(orderedCategories, grouped, dates) {
-  const lines = [`🛒 Lista della spesa (${formatShortDate(dates[0])} – ${formatShortDate(dates[6])})`, ""];
+// Condivide solo i prodotti selezionati (quelli che mancano), non l'intera lista.
+function buildShareText(orderedCategories, groupedMissing, dates) {
+  const lines = [`🛒 Da comprare (${formatShortDate(dates[0])} – ${formatShortDate(dates[6])})`, ""];
   orderedCategories.forEach((category) => {
+    const list = groupedMissing[category];
+    if (!list || list.length === 0) return;
     lines.push(category.toUpperCase());
-    grouped[category].forEach((item) => {
+    list.forEach((item) => {
       lines.push(`- ${item.name} (${formatQty(item.grams)})`);
     });
     lines.push("");
@@ -31,9 +34,10 @@ export default function Spesa() {
   const dates = useMemo(() => nextWeekDates(), []);
 
   const [items, setItems] = useState(null); // null = ancora da caricare
-  const [checked, setChecked] = useState({});
+  const [checked, setChecked] = useState({}); // spuntato = manca, va comprato
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showShareFallback, setShowShareFallback] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -106,8 +110,7 @@ export default function Spesa() {
   }, [session?.user?.id]);
 
   const toggle = (name) => setChecked((prev) => ({ ...prev, [name]: !prev[name] }));
-
-  const [showShareFallback, setShowShareFallback] = useState(false);
+  const clearSelection = () => setChecked({});
 
   const grouped = useMemo(() => {
     if (!items) return {};
@@ -128,15 +131,24 @@ export default function Spesa() {
   }, [grouped]);
 
   const totalCount = items?.length ?? 0;
-  const checkedCount = items?.filter((i) => checked[i.name]).length ?? 0;
-  const progress = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
+  const missingCount = items?.filter((i) => checked[i.name]).length ?? 0;
+
+  const groupedMissing = useMemo(() => {
+    const g = {};
+    orderedCategories.forEach((category) => {
+      const list = (grouped[category] || []).filter((item) => checked[item.name]);
+      if (list.length > 0) g[category] = list;
+    });
+    return g;
+  }, [grouped, orderedCategories, checked]);
 
   const shareText = useMemo(
-    () => (items && items.length > 0 ? buildShareText(orderedCategories, grouped, dates) : ""),
-    [items, orderedCategories, grouped, dates]
+    () => (missingCount > 0 ? buildShareText(orderedCategories, groupedMissing, dates) : ""),
+    [missingCount, orderedCategories, groupedMissing, dates]
   );
 
   const handleShare = async () => {
+    if (missingCount === 0) return;
     if (navigator.share) {
       try {
         await navigator.share({ title: "Lista della spesa AC UP", text: shareText });
@@ -153,32 +165,38 @@ export default function Spesa() {
 
   return (
     <Page maxWidth="max-w-4xl">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <SectionTitle className="text-3xl">Lista della Spesa</SectionTitle>
-          <p className="mt-2 text-white/70">
-            Dal menù della settimana: {formatShortDate(dates[0])} — {formatShortDate(dates[6])}
-          </p>
-        </div>
+      <div className="mb-8">
+        <SectionTitle className="text-3xl">Lista della Spesa</SectionTitle>
+        <p className="mt-2 text-white/70">
+          Dal menù della settimana: {formatShortDate(dates[0])} — {formatShortDate(dates[6])}
+        </p>
         {totalCount > 0 && (
-          <div className="text-right">
-            <div className="text-3xl font-bold font-mono-num text-white">{progress}%</div>
-            <div className="text-sm text-white/70">Completata</div>
-          </div>
+          <p className="mt-1 text-sm text-white/60">
+            Seleziona ciò che ti manca — solo quello verrà condiviso.
+          </p>
         )}
       </div>
 
       {!loading && !error && totalCount > 0 && (
-        <div className="mb-6">
+        <div className="flex flex-wrap items-center gap-3 mb-6">
           <button
             onClick={handleShare}
-            className={`${GLASS} flex items-center gap-2 px-5 py-3 rounded-xl text-white font-semibold text-sm transition hover:bg-white/25`}
+            disabled={missingCount === 0}
+            className={`${GLASS} flex items-center gap-2 px-5 py-3 rounded-xl text-white font-semibold text-sm transition hover:bg-white/25 disabled:opacity-40`}
           >
-            <Share2 size={16} /> Condividi lista
+            <Share2 size={16} /> Condividi selezionati {missingCount > 0 && `(${missingCount})`}
+          </button>
+
+          <button
+            onClick={clearSelection}
+            disabled={missingCount === 0}
+            className={`${GLASS} flex items-center gap-2 px-5 py-3 rounded-xl text-white font-semibold text-sm transition hover:bg-white/25 disabled:opacity-40`}
+          >
+            <RotateCcw size={15} /> Deseleziona tutto
           </button>
 
           {showShareFallback && (
-            <div className="flex gap-3 mt-3">
+            <div className="flex gap-3 w-full">
               <a
                 href={mailtoHref}
                 className={`${GLASS} flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm transition hover:bg-white/25`}
@@ -220,10 +238,6 @@ export default function Spesa() {
 
       {!loading && !error && items && items.length > 0 && (
         <>
-          <div className="w-full rounded-full h-2.5 mb-10 bg-white/20">
-            <div className="h-2.5 rounded-full bg-white transition-all duration-300" style={{ width: `${progress}%` }} />
-          </div>
-
           {orderedCategories.map((category) => (
             <div key={category} className="mb-8">
               <h2 className="text-lg font-bold uppercase tracking-wider mb-4" style={{ color: T.cream }}>
@@ -243,7 +257,7 @@ export default function Spesa() {
                         onChange={() => toggle(item.name)}
                         className="w-5 h-5"
                       />
-                      <span className={checked[item.name] ? "line-through text-white/50" : "text-white"}>
+                      <span className={checked[item.name] ? "text-white font-semibold" : "text-white/50"}>
                         {item.name}
                       </span>
                     </div>
