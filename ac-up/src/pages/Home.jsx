@@ -45,11 +45,15 @@ const initialMeals = [
 ];
 
 // A quale gruppo alimentare (tra le 150 ricette) attingere per ciascun pasto.
+// Spuntino/Merenda pescano solo da "colazioni": sono le uniche combinazioni
+// davvero leggere e pronte al volo (yogurt+frutta, ricotta+miele, toast+frutta).
+// "Uova & latticini" è pensato per accompagnare un pasto vero, non per uno
+// spuntino da solo.
 const MEAL_FOOD_GROUPS = {
   Colazione: ["colazioni"],
-  Spuntino: ["colazioni", "uova_latticini"],
+  Spuntino: ["colazioni"],
   Pranzo: ["carne", "pesce", "legumi"],
-  Merenda: ["colazioni", "uova_latticini"],
+  Merenda: ["colazioni"],
   Cena: ["carne", "pesce", "legumi"],
 };
 

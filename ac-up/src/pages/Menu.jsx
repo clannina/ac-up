@@ -7,9 +7,9 @@ import { supabase } from "../supabaseClient";
 
 const SLOTS = [
   { key: "Colazione", time: "07:30", groups: ["colazioni"] },
-  { key: "Spuntino", time: "10:30", groups: ["colazioni", "uova_latticini"], snackOnly: true },
+  { key: "Spuntino", time: "10:30", groups: ["colazioni"], snackOnly: true },
   { key: "Pranzo", time: "13:00", groups: ["carne", "pesce", "legumi"], preferMealPrep: true },
-  { key: "Merenda", time: "17:00", groups: ["colazioni", "uova_latticini"], snackOnly: true },
+  { key: "Merenda", time: "17:00", groups: ["colazioni"], snackOnly: true },
   { key: "Cena", time: "20:00", groups: ["carne", "pesce", "legumi"] },
 ];
 
