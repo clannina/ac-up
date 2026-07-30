@@ -44,14 +44,12 @@ const initialMeals = [
   { id: 5, name: "Cena", time: "20:00", recipe: "Seppie con verdure grigliate", kcal: 560, protein: 38, carbs: 40, fat: 20, completed: false, icon: Moon },
 ];
 
-// A quale gruppo alimentare (tra le 150 ricette) attingere per ciascun pasto.
-// Spuntino/Merenda pescano solo da "colazioni": sono le uniche combinazioni
-// davvero leggere e pronte al volo (yogurt+frutta, ricotta+miele, toast+frutta).
-// "Uova & latticini" è pensato per accompagnare un pasto vero, non per uno
-// spuntino da solo.
+// A quale gruppo alimentare (tra le 150+ ricette) attingere per ciascun pasto.
+// "spuntini" è la lista precisa (yogurt+frutta, frutta+frutta secca, ecc.)
+// pensata apposta per uno spuntino vero. Merenda resta su "colazioni" per ora.
 const MEAL_FOOD_GROUPS = {
   Colazione: ["colazioni"],
-  Spuntino: ["colazioni"],
+  Spuntino: ["spuntini"],
   Pranzo: ["carne", "pesce", "legumi"],
   Merenda: ["colazioni"],
   Cena: ["carne", "pesce", "legumi"],
