@@ -31,25 +31,22 @@ function RecipeCard({ recipe }) {
   };
 
   return (
-    <div className={`${GLASS} rounded-2xl p-5 transition hover:bg-white/75`}>
+    <div className={`${GLASS} rounded-[28px] p-5 transition hover:bg-white/20`}>
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="text-xl font-bold" style={{ color: T.ink }}>{recipe.name}</h3>
-          <p className="text-sm" style={{ color: T.stone }}>
+          <h3 className="text-xl font-bold text-white">{recipe.name}</h3>
+          <p className="text-sm text-white/70">
             {FOOD_GROUP_LABELS[recipe.food_group] ?? recipe.category ?? ""}
           </p>
         </div>
         {recipe.kcal != null && (
-          <span
-            className="rounded-full px-3 py-1 text-sm font-semibold font-mono-num whitespace-nowrap"
-            style={{ background: `${T.sage}22`, color: T.forest }}
-          >
+          <span className="rounded-full px-3 py-1 text-sm font-semibold font-mono-num whitespace-nowrap bg-white" style={{ color: T.forest }}>
             {recipe.kcal} kcal
           </span>
         )}
       </div>
 
-      <div className="mt-4 flex items-center gap-4 text-sm" style={{ color: T.stone }}>
+      <div className="mt-4 flex items-center gap-4 text-sm text-white/70">
         {recipe.prep_min != null && (
           <span className="flex items-center gap-1">
             <Clock size={14} /> <span className="font-mono-num">{recipe.prep_min} min</span>
@@ -60,31 +57,31 @@ function RecipeCard({ recipe }) {
       </div>
 
       <div className="mt-6 flex justify-between items-center text-sm">
-        <span className="flex items-center gap-1.5" style={{ color: T.stone }}>
-          <span className="w-1.5 h-1.5 rounded-full" style={{ background: T.protein }} />
+        <span className="flex items-center gap-1.5 text-white/80">
+          <span className="w-1.5 h-1.5 rounded-full bg-white" />
           <span className="font-mono-num">{recipe.protein != null ? `${recipe.protein} g proteine` : "—"}</span>
         </span>
         <button
           onClick={toggleOpen}
-          className="rounded-xl text-white px-4 py-2 flex items-center gap-1 transition"
-          style={{ background: T.sage }}
+          className="rounded-xl px-4 py-2 flex items-center gap-1 transition bg-white font-semibold"
+          style={{ color: T.forest }}
         >
           Apri {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
       </div>
 
       {open && (
-        <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${T.mist}` }}>
-          {loadingIng && <p className="text-sm" style={{ color: T.stone }}>Carico ingredienti...</p>}
+        <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.2)" }}>
+          {loadingIng && <p className="text-sm text-white/70">Carico ingredienti...</p>}
           {!loadingIng && ingredients?.length === 0 && (
-            <p className="text-sm" style={{ color: T.stone }}>Nessun ingrediente registrato per questa ricetta.</p>
+            <p className="text-sm text-white/70">Nessun ingrediente registrato per questa ricetta.</p>
           )}
           {!loadingIng && ingredients?.length > 0 && (
-            <ul className="text-sm space-y-1" style={{ color: T.ink }}>
+            <ul className="text-sm space-y-1 text-white/90">
               {ingredients.map((row, idx) => (
                 <li key={idx} className="flex justify-between">
                   <span>{row.ingredients?.name ?? "Ingrediente"}</span>
-                  <span className="font-mono-num" style={{ color: T.stone }}>{row.grams} g</span>
+                  <span className="font-mono-num text-white/70">{row.grams} g</span>
                 </li>
               ))}
             </ul>
@@ -152,17 +149,17 @@ export default function Ricette() {
     <Page>
       <div className="mb-8">
         <SectionTitle className="text-3xl">Ricette</SectionTitle>
-        <p className="mt-2" style={{ color: T.stone }}>Archivio ricette AC UP, collegato al database.</p>
+        <p className="mt-2 text-white/70">Archivio ricette AC UP, collegato al database.</p>
       </div>
 
       <div className="relative mb-5">
-        <Search className="absolute left-4 top-3" style={{ color: T.stone }} size={18} />
+        <Search className="absolute left-4 top-3 text-white/70" size={18} />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cerca una ricetta..."
-          className="w-full rounded-xl py-3 pl-11 pr-4 outline-none bg-white/70"
-          style={{ border: `1px solid ${T.mist}` }}
+          className="w-full rounded-xl py-3 pl-11 pr-4 outline-none bg-white/15 text-white placeholder-white/60"
+          style={{ border: "1px solid rgba(255,255,255,0.3)" }}
         />
       </div>
 
@@ -175,8 +172,8 @@ export default function Ricette() {
               className="shrink-0 rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap transition"
               style={
                 category === c.key
-                  ? { background: T.sage, color: "white" }
-                  : { background: "white", border: `1px solid ${T.mist}`, color: T.stone }
+                  ? { background: "white", color: T.forest }
+                  : { background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "white" }
               }
             >
               {c.label} <span className="opacity-70 font-mono-num">({c.count})</span>
@@ -188,19 +185,19 @@ export default function Ricette() {
       {loading && (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className={`${GLASS} rounded-2xl p-5 h-40 animate-pulse`} />
+            <div key={i} className={`${GLASS} rounded-[28px] p-5 h-40 animate-pulse`} />
           ))}
         </div>
       )}
 
       {!loading && error && (
-        <div className="rounded-2xl p-5" style={{ background: `${T.coral}15`, border: `1px solid ${T.coral}40`, color: T.coral }}>
+        <div className="rounded-[28px] p-5 bg-white" style={{ color: T.coral, border: `1px solid ${T.coral}` }}>
           Non riesco a caricare le ricette dal database ({error}). Controlla che l'app sia collegata a Supabase.
         </div>
       )}
 
       {!loading && !error && filtered.length === 0 && (
-        <div className={`${GLASS} rounded-2xl p-10 text-center`} style={{ color: T.stone }}>
+        <div className={`${GLASS} rounded-[28px] p-10 text-center text-white/70`}>
           Nessuna ricetta trovata.
         </div>
       )}

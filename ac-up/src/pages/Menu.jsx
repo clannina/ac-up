@@ -11,39 +11,39 @@ const meals = [
   { id: 5, name: "Cena", calories: 560, protein: 38, carbs: 40, fat: 20, time: "20:00" },
 ];
 
-function Macro({ label, value, color }) {
+function Macro({ label, value }) {
   return (
     <div className="flex flex-col items-center">
-      <span className="font-mono-num font-bold text-lg" style={{ color }}>{value}g</span>
-      <span className="text-xs" style={{ color: T.stone }}>{label}</span>
+      <span className="font-mono-num font-bold text-lg text-white">{value}g</span>
+      <span className="text-xs text-white/70">{label}</span>
     </div>
   );
 }
 
 function MealCard({ meal }) {
   return (
-    <div className={`${GLASS} rounded-2xl p-6 transition hover:bg-white/75`}>
+    <div className={`${GLASS} rounded-[28px] p-6 transition hover:bg-white/20`}>
       <div className="flex justify-between items-start">
         <div>
-          <h2 className="text-xl font-bold" style={{ color: T.ink }}>{meal.name}</h2>
-          <p className="text-sm flex items-center gap-1 mt-1" style={{ color: T.stone }}>
+          <h2 className="text-xl font-bold text-white">{meal.name}</h2>
+          <p className="text-sm flex items-center gap-1 mt-1 text-white/70">
             <Clock size={13} /> <span className="font-mono-num">{meal.time}</span>
           </p>
         </div>
-        <div className="px-3 py-1 rounded-full font-semibold font-mono-num text-sm" style={{ background: `${T.sage}22`, color: T.forest }}>
+        <div className="px-3 py-1 rounded-full font-semibold font-mono-num text-sm bg-white" style={{ color: T.forest }}>
           {meal.calories} kcal
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-6 mt-6">
-        <Macro label="Proteine" value={meal.protein} color={T.protein} />
-        <Macro label="Carbo" value={meal.carbs} color={T.carbs} />
-        <Macro label="Grassi" value={meal.fat} color={T.fat} />
+        <Macro label="Proteine" value={meal.protein} />
+        <Macro label="Carbo" value={meal.carbs} />
+        <Macro label="Grassi" value={meal.fat} />
       </div>
 
       <button
-        className="w-full mt-6 rounded-xl py-3 font-semibold transition"
-        style={{ border: `1px solid ${T.mist}`, color: T.ink }}
+        className="w-full mt-6 rounded-xl py-3 font-semibold transition text-white"
+        style={{ border: "1px solid rgba(255,255,255,0.35)" }}
       >
         Modifica pasto
       </button>
@@ -63,7 +63,7 @@ export default function Menu() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-5">
         <div>
           <SectionTitle className="text-3xl">Piano Alimentare</SectionTitle>
-          <p className="mt-2" style={{ color: T.stone }}>Gestisci tutti i pasti della giornata.</p>
+          <p className="mt-2 text-white/70">Gestisci tutti i pasti della giornata.</p>
         </div>
 
         <PrimaryButton className="flex items-center gap-2">
@@ -71,21 +71,21 @@ export default function Menu() {
         </PrimaryButton>
       </div>
 
-      <div className={`${GLASS} rounded-2xl mt-8 p-5 flex flex-col md:flex-row gap-4`}>
+      <div className={`${GLASS} rounded-[28px] mt-8 p-5 flex flex-col md:flex-row gap-4`}>
         <div className="relative flex-1">
-          <Search className="absolute left-4 top-3" style={{ color: T.stone }} size={18} />
+          <Search className="absolute left-4 top-3 text-white/70" size={18} />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cerca un pasto..."
-            className="pl-11 pr-4 py-3 rounded-xl w-full outline-none bg-white/70"
-            style={{ border: `1px solid ${T.mist}` }}
+            className="pl-11 pr-4 py-3 rounded-xl w-full outline-none bg-white/15 text-white placeholder-white/60"
+            style={{ border: "1px solid rgba(255,255,255,0.3)" }}
           />
         </div>
 
         <button
-          className="rounded-xl px-5 flex items-center justify-center gap-2 transition hover:bg-white/50"
-          style={{ border: `1px solid ${T.mist}`, color: T.ink }}
+          className="rounded-xl px-5 flex items-center justify-center gap-2 transition hover:bg-white/20 text-white"
+          style={{ border: "1px solid rgba(255,255,255,0.3)" }}
         >
           <Filter size={18} /> Filtri
         </button>

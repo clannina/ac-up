@@ -20,61 +20,53 @@ export default function Salute() {
   return (
     <Page>
       <SectionTitle className="text-3xl">Salute</SectionTitle>
-      <p className="mt-2" style={{ color: T.stone }}>Monitora i tuoi progressi.</p>
+      <p className="mt-2 text-white/70">Monitora i tuoi progressi.</p>
 
-      {/* Anelli — peso/acqua/calorie, come previsto dal Design System */}
-      <div className={`${GLASS} rounded-2xl p-7 mt-8`}>
+      <div className={`${GLASS} rounded-[28px] p-7 mt-8`}>
         <div className="grid grid-cols-3 gap-4">
-          <Ring value={stats.weight} max={stats.weight + 5} color={T.sage} label="Peso" sub="kg" icon={Scale} />
-          <Ring value={stats.water} max={stats.waterTarget} color={T.protein} label="Acqua" sub={`/ ${stats.waterTarget} bicchieri`} icon={Droplet} />
-          <Ring value={stats.calories} max={stats.calorieTarget} color={T.carbs} label="Calorie" sub={`/ ${stats.calorieTarget} kcal`} icon={Flame} />
+          <Ring value={stats.weight} max={stats.weight + 5} icon={Scale} label="Peso" sub="kg" />
+          <Ring value={stats.water} max={stats.waterTarget} icon={Droplet} label="Acqua" sub={`/ ${stats.waterTarget}`} />
+          <Ring value={stats.calories} max={stats.calorieTarget} icon={Flame} label="Calorie" sub={`/ ${stats.calorieTarget}`} />
         </div>
       </div>
 
-      {/* BMI */}
-      <div className={`${GLASS} rounded-2xl p-6 mt-6 flex items-center gap-4`}>
-        <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style={{ background: `${T.protein}22` }}>
-          <Activity size={20} style={{ color: T.protein }} />
+      <div className={`${GLASS} rounded-[28px] p-6 mt-6 flex items-center gap-4`}>
+        <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-white/20 border border-white/25">
+          <Activity size={20} className="text-white" />
         </div>
         <div>
-          <p className="text-sm" style={{ color: T.stone }}>BMI</p>
-          <p className="font-mono-num text-2xl font-bold" style={{ color: T.ink }}>{stats.bmi}</p>
+          <p className="text-sm text-white/70">BMI</p>
+          <p className="font-mono-num text-2xl font-bold text-white">{stats.bmi}</p>
         </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 mt-6">
-        <div className={`${GLASS} rounded-2xl p-6`}>
-          <h2 className="text-lg font-bold uppercase tracking-wider mb-6" style={{ color: T.coral }}>Obiettivi</h2>
+        <div className={`${GLASS} rounded-[28px] p-6`}>
+          <h2 className="text-lg font-bold uppercase tracking-wider mb-6" style={{ color: T.cream }}>Obiettivi</h2>
 
-          <p className="mb-2 text-sm" style={{ color: T.stone }}>Peso</p>
-          <div className="w-full rounded-full h-2 mb-6" style={{ background: T.mist }}>
-            <div className="h-2 rounded-full" style={{ width: `${Math.round((stats.target / stats.weight) * 100)}%`, background: T.sage }} />
+          <p className="mb-2 text-sm text-white/70">Peso</p>
+          <div className="w-full rounded-full h-2 mb-6 bg-white/20">
+            <div className="h-2 rounded-full bg-white" style={{ width: `${Math.round((stats.target / stats.weight) * 100)}%` }} />
           </div>
 
-          <p className="mb-2 text-sm" style={{ color: T.stone }}>Acqua</p>
-          <div className="w-full rounded-full h-2 mb-6" style={{ background: T.mist }}>
-            <div className="h-2 rounded-full" style={{ width: `${Math.round((stats.water / stats.waterTarget) * 100)}%`, background: T.protein }} />
+          <p className="mb-2 text-sm text-white/70">Acqua</p>
+          <div className="w-full rounded-full h-2 mb-6 bg-white/20">
+            <div className="h-2 rounded-full bg-white" style={{ width: `${Math.round((stats.water / stats.waterTarget) * 100)}%` }} />
           </div>
 
-          <p className="mb-2 text-sm" style={{ color: T.stone }}>Calorie</p>
-          <div className="w-full rounded-full h-2" style={{ background: T.mist }}>
-            <div className="h-2 rounded-full" style={{ width: `${Math.round((stats.calories / stats.calorieTarget) * 100)}%`, background: T.carbs }} />
+          <p className="mb-2 text-sm text-white/70">Calorie</p>
+          <div className="w-full rounded-full h-2 bg-white/20">
+            <div className="h-2 rounded-full bg-white" style={{ width: `${Math.round((stats.calories / stats.calorieTarget) * 100)}%` }} />
           </div>
         </div>
 
-        <div className={`${GLASS} rounded-2xl p-6`}>
-          <h2 className="text-lg font-bold uppercase tracking-wider mb-6" style={{ color: T.coral }}>Misure corporee</h2>
+        <div className={`${GLASS} rounded-[28px] p-6`}>
+          <h2 className="text-lg font-bold uppercase tracking-wider mb-6" style={{ color: T.cream }}>Misure corporee</h2>
 
-          <div className="space-y-4">
-            <div className="flex justify-between" style={{ color: T.ink }}>
-              <span>Vita</span><strong className="font-mono-num">{stats.waist} cm</strong>
-            </div>
-            <div className="flex justify-between" style={{ color: T.ink }}>
-              <span>Torace</span><strong className="font-mono-num">{stats.chest} cm</strong>
-            </div>
-            <div className="flex justify-between" style={{ color: T.ink }}>
-              <span>Fianchi</span><strong className="font-mono-num">{stats.hips} cm</strong>
-            </div>
+          <div className="space-y-4 text-white">
+            <div className="flex justify-between"><span>Vita</span><strong className="font-mono-num">{stats.waist} cm</strong></div>
+            <div className="flex justify-between"><span>Torace</span><strong className="font-mono-num">{stats.chest} cm</strong></div>
+            <div className="flex justify-between"><span>Fianchi</span><strong className="font-mono-num">{stats.hips} cm</strong></div>
           </div>
 
           <PrimaryButton className="mt-8 w-full">Aggiorna misure</PrimaryButton>

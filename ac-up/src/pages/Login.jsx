@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
-import { T, GLASS } from "../lib/theme";
-import { PrimaryButton } from "../components/ui";
+import { T, GLASS, PAGE_GRADIENT } from "../lib/theme";
+import { PrimaryButton, PageBackground } from "../components/ui";
 import { useAuth } from "../lib/AuthContext";
 
 export default function Login() {
   const { signIn, signUp } = useAuth();
-  const [mode, setMode] = useState("signin"); // "signin" | "signup"
+  const [mode, setMode] = useState("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -36,34 +36,30 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-6" style={{ background: T.paper }}>
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute -top-32 -left-24 w-96 h-96 rounded-full blur-3xl opacity-40" style={{ background: T.sage }} />
-        <div className="absolute top-1/3 -right-32 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-30" style={{ background: T.protein }} />
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-25" style={{ background: T.carbs }} />
-      </div>
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-6" style={{ background: PAGE_GRADIENT }}>
+      <PageBackground />
 
-      <div className={`${GLASS} rounded-2xl p-8 w-full max-w-sm`}>
-        <h1 className="text-2xl font-bold mb-1" style={{ color: T.ink }}>AC UP</h1>
-        <p className="text-sm mb-7" style={{ color: T.stone }}>
+      <div className={`${GLASS} rounded-[28px] p-8 w-full max-w-sm relative`}>
+        <h1 className="text-2xl font-bold mb-1 text-white">AC UP</h1>
+        <p className="text-sm mb-7 text-white/70">
           {mode === "signin" ? "Accedi al tuo piano alimentare." : "Crea il tuo account."}
         </p>
 
         <form onSubmit={submit} className="space-y-4">
           <div className="relative">
-            <Mail className="absolute left-4 top-3.5" size={18} style={{ color: T.stone }} />
+            <Mail className="absolute left-4 top-3.5 text-white/70" size={18} />
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
-              className="w-full rounded-xl pl-11 pr-4 py-3 outline-none bg-white/70"
-              style={{ border: `1px solid ${T.mist}` }}
+              className="w-full rounded-xl pl-11 pr-4 py-3 outline-none bg-white/15 text-white placeholder-white/50"
+              style={{ border: "1px solid rgba(255,255,255,0.3)" }}
             />
           </div>
           <div className="relative">
-            <Lock className="absolute left-4 top-3.5" size={18} style={{ color: T.stone }} />
+            <Lock className="absolute left-4 top-3.5 text-white/70" size={18} />
             <input
               type={showPassword ? "text" : "password"}
               required
@@ -71,14 +67,13 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full rounded-xl pl-11 pr-11 py-3 outline-none bg-white/70"
-              style={{ border: `1px solid ${T.mist}` }}
+              className="w-full rounded-xl pl-11 pr-11 py-3 outline-none bg-white/15 text-white placeholder-white/50"
+              style={{ border: "1px solid rgba(255,255,255,0.3)" }}
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-4 top-3.5"
-              style={{ color: T.stone }}
+              className="absolute right-4 top-3.5 text-white/70"
               aria-label={showPassword ? "Nascondi password" : "Mostra password"}
               tabIndex={-1}
             >
@@ -87,12 +82,12 @@ export default function Login() {
           </div>
 
           {error && (
-            <div className="text-sm rounded-xl p-3" style={{ background: `${T.coral}15`, color: T.coral }}>
+            <div className="text-sm rounded-xl p-3 bg-white" style={{ color: T.coral }}>
               {error}
             </div>
           )}
           {info && (
-            <div className="text-sm rounded-xl p-3" style={{ background: `${T.sage}15`, color: T.forest }}>
+            <div className="text-sm rounded-xl p-3 bg-white" style={{ color: T.forest }}>
               {info}
             </div>
           )}
@@ -109,8 +104,7 @@ export default function Login() {
             setError(null);
             setInfo(null);
           }}
-          className="w-full text-center text-sm mt-5"
-          style={{ color: T.sage }}
+          className="w-full text-center text-sm mt-5 text-white"
         >
           {mode === "signin" ? "Non hai un account? Registrati" : "Hai già un account? Accedi"}
         </button>

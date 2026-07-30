@@ -33,40 +33,35 @@ export default function Spesa() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <SectionTitle className="text-3xl">Lista della Spesa</SectionTitle>
-          <p className="mt-2" style={{ color: T.stone }}>Generata dalle ricette selezionate.</p>
+          <p className="mt-2 text-white/70">Generata dalle ricette selezionate.</p>
         </div>
         <div className="text-right">
-          <div className="text-3xl font-bold font-mono-num" style={{ color: T.sage }}>{progress}%</div>
-          <div className="text-sm" style={{ color: T.stone }}>Completata</div>
+          <div className="text-3xl font-bold font-mono-num text-white">{progress}%</div>
+          <div className="text-sm text-white/70">Completata</div>
         </div>
       </div>
 
-      <div className="w-full rounded-full h-2.5 mb-10" style={{ background: T.mist }}>
-        <div className="h-2.5 rounded-full transition-all duration-300" style={{ width: `${progress}%`, background: T.sage }} />
+      <div className="w-full rounded-full h-2.5 mb-10 bg-white/20">
+        <div className="h-2.5 rounded-full bg-white transition-all duration-300" style={{ width: `${progress}%` }} />
       </div>
 
       {Object.entries(grouped).map(([category, list]) => (
         <div key={category} className="mb-8">
-          <h2 className="text-lg font-bold uppercase tracking-wider mb-4" style={{ color: T.coral }}>
+          <h2 className="text-lg font-bold uppercase tracking-wider mb-4" style={{ color: T.cream }}>
             {category}
           </h2>
 
-          <div className={`${GLASS} rounded-2xl divide-y`} style={{ "--tw-divide-opacity": 1 }}>
+          <div className={`${GLASS} rounded-[28px] divide-y divide-white/15`}>
             {list.map((item) => (
-              <label
-                key={item.id}
-                className="flex items-center justify-between p-4 cursor-pointer transition hover:bg-white/40"
-                style={{ borderColor: T.mist }}
-              >
+              <label key={item.id} className="flex items-center justify-between p-4 cursor-pointer transition hover:bg-white/10">
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
                     checked={item.checked}
                     onChange={() => toggle(item.id)}
-                    className="w-5 h-5 accent-current"
-                    style={{ color: T.sage }}
+                    className="w-5 h-5"
                   />
-                  <span style={item.checked ? { textDecoration: "line-through", color: T.stone } : { color: T.ink }}>
+                  <span className={item.checked ? "line-through text-white/50" : "text-white"}>
                     {item.name}
                   </span>
                 </div>
