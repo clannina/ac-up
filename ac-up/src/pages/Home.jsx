@@ -4,7 +4,6 @@ import {
   Check,
   Plus,
   ArrowRight,
-  Flag,
   Flame,
   Droplet,
   ShoppingCart,
@@ -16,6 +15,20 @@ import {
 } from "lucide-react";
 import { T, GLASS } from "../lib/theme";
 import { Page, SectionTitle, IconChip, Ring } from "../components/ui";
+import { useAuth } from "../lib/AuthContext";
+
+const POSITIVE_MESSAGES = [
+  { emoji: "🌱", text: "Un passo alla volta è comunque un passo avanti." },
+  { emoji: "💪", text: "Non serve essere perfetti, basta essere costanti." },
+  { emoji: "☀️", text: "Oggi è un'altra occasione per prenderti cura di te." },
+  { emoji: "🥗", text: "Ogni pasto semplice e sano conta, davvero." },
+  { emoji: "✨", text: "Sei sulla strada giusta, continua così." },
+];
+
+function positiveMessageOfTheDay() {
+  const dayIndex = new Date().getDate() % POSITIVE_MESSAGES.length;
+  return POSITIVE_MESSAGES[dayIndex];
+}
 
 const initialMeals = [
   { id: 1, name: "Colazione", time: "07:30", recipe: "Yogurt greco con frutti di bosco", kcal: 320, protein: 22, carbs: 30, fat: 10, completed: true, icon: Coffee },
@@ -83,24 +96,23 @@ function MealRow({ meal, onToggle }) {
 }
 
 export default function Home() {
+  const { session, profile } = useAuth();
   const [meals, setMeals] = useState(initialMeals);
   const [water, setWater] = useState(6);
+
+  const displayName =
+    profile?.display_name || session?.user?.email?.split("@")[0] || "";
+  const initial = displayName ? displayName.charAt(0).toUpperCase() : "•";
+  const message = positiveMessageOfTheDay();
 
   const toggleMeal = (id) =>
     setMeals((prev) => prev.map((m) => (m.id === id ? { ...m, completed: !m.completed } : m)));
 
   const waterTarget = 8;
-  const weight = 98;
-  const weightTarget = 75;
-  const weightDelta = -0.8;
   const calories = 1450;
   const calorieTarget = 1900;
 
   const doneMeals = meals.filter((m) => m.completed).length;
-
-  const span = 30;
-  const distance = weight - weightTarget;
-  const trackPct = Math.max(4, Math.min(96, 100 - (distance / span) * 100));
 
   const groceryLeft = 4;
 
@@ -110,40 +122,22 @@ export default function Home() {
       <div className="flex items-start justify-between mb-8">
         <div>
           <p className="font-mono-num text-xs uppercase tracking-wider mb-1 text-white/70">{todayLabel()}</p>
-          <h1 className="text-4xl font-bold text-white">{greeting()}</h1>
+          <h1 className="text-4xl font-bold text-white">
+            {greeting()}{displayName ? `, ${displayName}` : ""}
+          </h1>
           <p className="text-sm text-white/70 mt-1">Un piano semplice, un giorno alla volta.</p>
         </div>
         <Link to="/profilo" className={`${GLASS} w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0`}>
-          A
+          {initial}
         </Link>
       </div>
 
-      {/* Obiettivo */}
+      {/* Data + messaggio positivo, al posto della card Obiettivo (spostata in Profilo) */}
       <div className={`${GLASS} rounded-[28px] p-7 mb-10`}>
-        <div className="flex items-center gap-2 mb-6">
-          <Flag size={15} className="text-white" />
-          <span className="text-xs font-bold uppercase tracking-wider text-white">Obiettivo</span>
-        </div>
-
-        <div className="flex items-end justify-between mb-5">
-          <div>
-            <span className="font-mono-num text-5xl font-bold text-white">{weight}</span>
-            <span className="text-sm ml-1 text-white/70">kg oggi</span>
-          </div>
-          <div className="text-xs font-bold px-3 py-1.5 rounded-full font-mono-num bg-white" style={{ color: T.forest }}>
-            {weightDelta} kg
-          </div>
-        </div>
-
-        <div className="relative h-1.5 rounded-full mb-2 bg-white/20">
-          <div
-            className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white"
-            style={{ left: `${trackPct}%`, transform: "translate(-50%, -50%)" }}
-          />
-        </div>
-        <div className="flex justify-between text-xs font-mono-num text-white/70">
-          <span>oggi</span>
-          <span>{weightTarget} kg obiettivo</span>
+        <p className="font-mono-num text-xs uppercase tracking-wider text-white/70 mb-3">{todayLabel()}</p>
+        <div className="flex items-start gap-3">
+          <span className="text-3xl leading-none">{message.emoji}</span>
+          <p className="text-2xl font-semibold text-white leading-snug">{message.text}</p>
         </div>
       </div>
 
