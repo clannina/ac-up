@@ -16,7 +16,7 @@ export function Page({ children, maxWidth = "max-w-6xl" }) {
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ background: PAGE_GRADIENT }}>
       <PageBackground />
-      <div className={`${maxWidth} mx-auto px-6 py-10 relative`}>{children}</div>
+      <div className={`${maxWidth} mx-auto px-6 py-10 relative min-w-0`}>{children}</div>
     </div>
   );
 }
