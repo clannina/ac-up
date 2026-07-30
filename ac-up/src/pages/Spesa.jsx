@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Share2, Mail, MessageCircle } from "lucide-react";
 import { T, GLASS } from "../lib/theme";
 import { Page, SectionTitle, PrimaryButton } from "../components/ui";
 import { useAuth } from "../lib/AuthContext";
@@ -12,6 +12,18 @@ const CATEGORY_ORDER = ["Carne", "Pesce", "Ortofrutta", "Latticini", "Uova", "Pa
 function formatQty(grams) {
   if (grams >= 1000) return `${(grams / 1000).toFixed(grams % 1000 === 0 ? 0 : 1)} kg`;
   return `${Math.round(grams)} g`;
+}
+
+function buildShareText(orderedCategories, grouped, dates) {
+  const lines = [`🛒 Lista della spesa (${formatShortDate(dates[0])} – ${formatShortDate(dates[6])})`, ""];
+  orderedCategories.forEach((category) => {
+    lines.push(category.toUpperCase());
+    grouped[category].forEach((item) => {
+      lines.push(`- ${item.name} (${formatQty(item.grams)})`);
+    });
+    lines.push("");
+  });
+  return lines.join("\n").trim();
 }
 
 export default function Spesa() {
@@ -95,6 +107,8 @@ export default function Spesa() {
 
   const toggle = (name) => setChecked((prev) => ({ ...prev, [name]: !prev[name] }));
 
+  const [showShareFallback, setShowShareFallback] = useState(false);
+
   const grouped = useMemo(() => {
     if (!items) return {};
     const g = {};
@@ -117,6 +131,26 @@ export default function Spesa() {
   const checkedCount = items?.filter((i) => checked[i.name]).length ?? 0;
   const progress = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
 
+  const shareText = useMemo(
+    () => (items && items.length > 0 ? buildShareText(orderedCategories, grouped, dates) : ""),
+    [items, orderedCategories, grouped, dates]
+  );
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Lista della spesa AC UP", text: shareText });
+      } catch {
+        // l'utente ha annullato la condivisione, nessun errore da mostrare
+      }
+    } else {
+      setShowShareFallback((v) => !v);
+    }
+  };
+
+  const mailtoHref = `mailto:?subject=${encodeURIComponent("Lista della spesa")}&body=${encodeURIComponent(shareText)}`;
+  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+
   return (
     <Page maxWidth="max-w-4xl">
       <div className="flex justify-between items-center mb-8">
@@ -133,6 +167,36 @@ export default function Spesa() {
           </div>
         )}
       </div>
+
+      {!loading && !error && totalCount > 0 && (
+        <div className="mb-6">
+          <button
+            onClick={handleShare}
+            className={`${GLASS} flex items-center gap-2 px-5 py-3 rounded-xl text-white font-semibold text-sm transition hover:bg-white/25`}
+          >
+            <Share2 size={16} /> Condividi lista
+          </button>
+
+          {showShareFallback && (
+            <div className="flex gap-3 mt-3">
+              <a
+                href={mailtoHref}
+                className={`${GLASS} flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm transition hover:bg-white/25`}
+              >
+                <Mail size={15} /> Email
+              </a>
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${GLASS} flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm transition hover:bg-white/25`}
+              >
+                <MessageCircle size={15} /> WhatsApp
+              </a>
+            </div>
+          )}
+        </div>
+      )}
 
       {loading && <p className="text-white/70">Preparo la lista dagli ingredienti del menù...</p>}
 
