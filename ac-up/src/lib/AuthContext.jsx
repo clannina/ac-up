@@ -26,23 +26,22 @@ export function AuthProvider({ children }) {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
+  const refreshProfile = async () => {
     if (!supabase || !session?.user?.id) {
       setProfile(null);
       return;
     }
-    let active = true;
-    supabase
+    const { data } = await supabase
       .from("profiles")
       .select("id, display_name")
       .eq("id", session.user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (active) setProfile(data);
-      });
-    return () => {
-      active = false;
-    };
+      .maybeSingle();
+    setProfile(data);
+  };
+
+  useEffect(() => {
+    refreshProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id]);
 
   const signUp = (email, password) => supabase.auth.signUp({ email, password });
@@ -50,7 +49,7 @@ export function AuthProvider({ children }) {
   const signOut = () => supabase.auth.signOut();
 
   return (
-    <AuthContext.Provider value={{ session, authError, profile, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, authError, profile, refreshProfile, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
