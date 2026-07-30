@@ -6,6 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined); // undefined = ancora da controllare
   const [authError, setAuthError] = useState(null);
+  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     if (!supabase) {
@@ -25,12 +26,31 @@ export function AuthProvider({ children }) {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!supabase || !session?.user?.id) {
+      setProfile(null);
+      return;
+    }
+    let active = true;
+    supabase
+      .from("profiles")
+      .select("id, display_name")
+      .eq("id", session.user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active) setProfile(data);
+      });
+    return () => {
+      active = false;
+    };
+  }, [session?.user?.id]);
+
   const signUp = (email, password) => supabase.auth.signUp({ email, password });
   const signIn = (email, password) => supabase.auth.signInWithPassword({ email, password });
   const signOut = () => supabase.auth.signOut();
 
   return (
-    <AuthContext.Provider value={{ session, authError, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, authError, profile, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
