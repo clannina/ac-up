@@ -76,14 +76,14 @@ export function Ring({ value, max, size = 92, stroke = 8, icon: Icon, label, sub
 }
 
 /** Pulsante primario: bianco pieno con testo scuro, leggibile su sfondo colorato. */
-export function PrimaryButton({ children, className = "", ...props }) {
+export function PrimaryButton({ children, className = "", as: Tag = "button", ...props }) {
   return (
-    <button
+    <Tag
       className={`rounded-xl px-6 py-3 font-semibold bg-white transition hover:bg-white/90 ${className}`}
       style={{ color: T.forest }}
       {...props}
     >
       {children}
-    </button>
+    </Tag>
   );
 }
