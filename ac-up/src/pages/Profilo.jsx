@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { T, GLASS } from "../lib/theme";
 import { Page, SectionTitle, PrimaryButton } from "../components/ui";
+import { useAuth } from "../lib/AuthContext";
 
 export default function Profilo() {
+  const { session, signOut } = useAuth();
   const [profile, setProfile] = useState({
     name: "Anna",
-    email: "anna@example.com",
+    email: session?.user?.email ?? "",
     weight: 98,
     target: 75,
     calories: 1900,
@@ -89,6 +91,14 @@ export default function Profilo() {
           <PrimaryButton className="px-6 py-3">Salva profilo</PrimaryButton>
         </div>
       </div>
+
+      <button
+        onClick={signOut}
+        className="w-full mt-6 py-3 rounded-xl font-semibold transition hover:bg-white/50"
+        style={{ border: `1px solid ${T.coral}`, color: T.coral }}
+      >
+        Esci
+      </button>
     </Page>
   );
 }
