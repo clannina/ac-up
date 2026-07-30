@@ -256,7 +256,7 @@ export default function Home() {
         </div>
         <div className="grid md:grid-cols-2 gap-4">
           {meals.map((meal, i) => (
-            <div key={meal.id} className={i === meals.length - 1 && meals.length % 2 === 1 ? "md:col-span-2" : ""}>
+            <div key={meal.id} className={`min-w-0 ${i === meals.length - 1 && meals.length % 2 === 1 ? "md:col-span-2" : ""}`}>
               <MealRow
                 meal={meal}
                 onToggle={toggleMeal}
