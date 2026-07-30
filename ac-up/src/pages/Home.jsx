@@ -151,7 +151,7 @@ function MealRow({ meal, onToggle, onSwap, dailyTotal, calorieTarget, locked }) 
             <p className="text-sm text-white/70">Nessuna alternativa trovata per questo pasto.</p>
           )}
           {!loadingAlts && alternatives?.length > 0 && (
-            <div className="space-y-1.5 max-h-72 overflow-y-auto overflow-x-hidden -mr-1 pr-1">
+            <div className="space-y-1.5 max-h-72 overflow-y-auto overflow-x-hidden">
               {alternatives.map((alt) => {
                 const wouldBeTotal = dailyTotal - meal.kcal + alt.kcal;
                 const overBudget = wouldBeTotal > calorieTarget;
@@ -159,23 +159,23 @@ function MealRow({ meal, onToggle, onSwap, dailyTotal, calorieTarget, locked }) 
                   <button
                     key={alt.id}
                     onClick={() => chooseAlternative(alt)}
-                    className="w-full flex items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/15 overflow-hidden"
+                    className="w-full rounded-2xl p-3 text-left transition hover:bg-white/15 block"
                     style={{ background: "rgba(255,255,255,0.08)" }}
                   >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{alt.name}</p>
-                      <p
-                        className="text-xs mt-0.5 truncate"
+                    <p className="text-sm font-medium text-white">{alt.name}</p>
+                    <div className="flex items-center justify-between mt-1.5">
+                      <span
+                        className="text-xs"
                         style={{ color: overBudget ? "#FFD7C9" : "rgba(255,255,255,0.7)" }}
                       >
                         {overBudget
                           ? `Sfora il budget di ${wouldBeTotal - calorieTarget} kcal`
                           : "Entro il budget di oggi"}
-                      </p>
+                      </span>
+                      <span className="font-mono-num text-sm font-bold text-white">
+                        {alt.kcal} kcal
+                      </span>
                     </div>
-                    <span className="font-mono-num text-sm font-bold text-white shrink-0 whitespace-nowrap">
-                      {alt.kcal} kcal
-                    </span>
                   </button>
                 );
               })}
