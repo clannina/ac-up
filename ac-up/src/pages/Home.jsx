@@ -12,10 +12,14 @@ import {
   UtensilsCrossed,
   Cookie,
   Moon,
+  ChevronDown,
+  ChevronUp,
+  Repeat,
 } from "lucide-react";
 import { T, GLASS } from "../lib/theme";
 import { Page, SectionTitle, IconChip, Ring } from "../components/ui";
 import { useAuth } from "../lib/AuthContext";
+import { supabase } from "../supabaseClient";
 
 const POSITIVE_MESSAGES = [
   { emoji: "🌱", text: "Un passo alla volta è comunque un passo avanti." },
@@ -38,6 +42,15 @@ const initialMeals = [
   { id: 5, name: "Cena", time: "20:00", recipe: "Seppie con verdure grigliate", kcal: 560, protein: 38, carbs: 40, fat: 20, completed: false, icon: Moon },
 ];
 
+// A quale gruppo alimentare (tra le 150 ricette) attingere per ciascun pasto.
+const MEAL_FOOD_GROUPS = {
+  Colazione: ["colazioni"],
+  Spuntino: ["colazioni", "uova_latticini"],
+  Pranzo: ["carne", "pesce", "legumi"],
+  Merenda: ["colazioni", "uova_latticini"],
+  Cena: ["carne", "pesce", "legumi"],
+};
+
 function greeting() {
   const h = new Date().getHours();
   if (h < 12) return "Buongiorno";
@@ -51,7 +64,35 @@ function todayLabel() {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function MealRow({ meal, onToggle }) {
+function MealRow({ meal, onToggle, onSwap, dailyTotal, calorieTarget }) {
+  const [open, setOpen] = useState(false);
+  const [alternatives, setAlternatives] = useState(null);
+  const [loadingAlts, setLoadingAlts] = useState(false);
+
+  const toggleOpen = async () => {
+    if (!open && alternatives === null) {
+      setLoadingAlts(true);
+      const pool = MEAL_FOOD_GROUPS[meal.name] ?? ["carne", "pesce", "legumi"];
+      const { data, error } = await supabase
+        ? await supabase.from("recipes").select("*").in("food_group", pool)
+        : { data: [], error: null };
+
+      const list = error ? [] : (data ?? [])
+        .filter((r) => r.name !== meal.recipe && r.kcal != null)
+        .sort((a, b) => Math.abs(a.kcal - meal.kcal) - Math.abs(b.kcal - meal.kcal))
+        .slice(0, 8);
+
+      setAlternatives(list);
+      setLoadingAlts(false);
+    }
+    setOpen((o) => !o);
+  };
+
+  const chooseAlternative = (recipe) => {
+    onSwap(meal.id, recipe);
+    setOpen(false);
+  };
+
   return (
     <div className={`${GLASS} rounded-[28px] p-5 flex flex-col gap-3 transition`}>
       <div className="flex items-start justify-between">
@@ -91,6 +132,48 @@ function MealRow({ meal, onToggle }) {
           <span className="w-1.5 h-1.5 rounded-full bg-white/30" /> <span className="font-mono-num">{meal.fat}g</span>
         </span>
       </div>
+
+      <button
+        onClick={toggleOpen}
+        className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold text-white pt-1"
+      >
+        <Repeat size={14} /> Scegli alternativa {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+      </button>
+
+      {open && (
+        <div className="pt-2 -mx-1">
+          {loadingAlts && <p className="text-sm text-white/70 px-1">Cerco alternative...</p>}
+          {!loadingAlts && alternatives?.length === 0 && (
+            <p className="text-sm text-white/70 px-1">Nessuna alternativa trovata per questo pasto.</p>
+          )}
+          {!loadingAlts && alternatives?.length > 0 && (
+            <div className="space-y-1.5 max-h-72 overflow-y-auto px-1">
+              {alternatives.map((alt) => {
+                const wouldBeTotal = dailyTotal - meal.kcal + alt.kcal;
+                const overBudget = wouldBeTotal > calorieTarget;
+                return (
+                  <button
+                    key={alt.id}
+                    onClick={() => chooseAlternative(alt)}
+                    className="w-full flex items-center justify-between rounded-2xl p-3 text-left transition hover:bg-white/15"
+                    style={{ background: "rgba(255,255,255,0.08)" }}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-white truncate">{alt.name}</p>
+                      <p className="text-xs mt-0.5" style={{ color: overBudget ? "#FFD7C9" : "rgba(255,255,255,0.7)" }}>
+                        {overBudget
+                          ? `Sfora il budget di ${wouldBeTotal - calorieTarget} kcal`
+                          : "Entro il budget di oggi"}
+                      </p>
+                    </div>
+                    <span className="font-mono-num text-sm font-bold text-white shrink-0 ml-3">{alt.kcal} kcal</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -108,9 +191,22 @@ export default function Home() {
   const toggleMeal = (id) =>
     setMeals((prev) => prev.map((m) => (m.id === id ? { ...m, completed: !m.completed } : m)));
 
+  // Sostituisce un pasto con una ricetta alternativa scelta dall'utente,
+  // mantenendo orario/icona/stato del pasto originale.
+  const swapMeal = (id, recipe) =>
+    setMeals((prev) =>
+      prev.map((m) =>
+        m.id === id
+          ? { ...m, recipe: recipe.name, kcal: recipe.kcal, protein: recipe.protein, carbs: recipe.carbs, fat: recipe.fat }
+          : m
+      )
+    );
+
   const waterTarget = 8;
-  const calories = 1450;
   const calorieTarget = 1900;
+  // Le kcal di oggi sono sempre la somma reale dei pasti attuali,
+  // non un numero fisso: si aggiornano da sole a ogni sostituzione.
+  const calories = meals.reduce((sum, m) => sum + Number(m.kcal || 0), 0);
 
   const doneMeals = meals.filter((m) => m.completed).length;
 
@@ -151,14 +247,14 @@ export default function Home() {
         <div className="grid md:grid-cols-2 gap-4">
           {meals.map((meal, i) => (
             <div key={meal.id} className={i === meals.length - 1 && meals.length % 2 === 1 ? "md:col-span-2" : ""}>
-              <MealRow meal={meal} onToggle={toggleMeal} />
+              <MealRow meal={meal} onToggle={toggleMeal} onSwap={swapMeal} dailyTotal={calories} calorieTarget={calorieTarget} />
             </div>
           ))}
         </div>
         <p className="text-xs mt-3 font-mono-num text-white/70">{doneMeals} di {meals.length} completati</p>
       </div>
 
-      {/* Calorie / Acqua — il Peso è ora nel Profilo */}
+      {/* Calorie / Acqua — il Peso è ora in Salute */}
       <div className={`${GLASS} rounded-[28px] p-7 mb-10`}>
         <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto">
           <Ring value={calories} max={calorieTarget} icon={Flame} label="Calorie" />
