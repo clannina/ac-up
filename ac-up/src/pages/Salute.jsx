@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Scale, Droplet, Flame, Activity } from "lucide-react";
+import { Scale, Droplet, Flame, Activity, Flag } from "lucide-react";
 import { T, GLASS } from "../lib/theme";
 import { Page, SectionTitle, Ring, PrimaryButton } from "../components/ui";
 
@@ -17,12 +17,46 @@ export default function Salute() {
     hips: 122,
   });
 
+  const weightDelta = -0.8;
+  const span = 30;
+  const distance = stats.weight - stats.target;
+  const trackPct = Math.max(4, Math.min(96, 100 - (distance / span) * 100));
+
   return (
     <Page>
       <SectionTitle className="text-3xl">Salute</SectionTitle>
       <p className="mt-2 text-white/70">Monitora i tuoi progressi.</p>
 
+      {/* Obiettivo — spostata qui da Home */}
       <div className={`${GLASS} rounded-[28px] p-7 mt-8`}>
+        <div className="flex items-center gap-2 mb-6">
+          <Flag size={15} className="text-white" />
+          <span className="text-xs font-bold uppercase tracking-wider text-white">Obiettivo</span>
+        </div>
+
+        <div className="flex items-end justify-between mb-5">
+          <div>
+            <span className="font-mono-num text-5xl font-bold text-white">{stats.weight}</span>
+            <span className="text-sm ml-1 text-white/70">kg oggi</span>
+          </div>
+          <div className="text-xs font-bold px-3 py-1.5 rounded-full font-mono-num bg-white" style={{ color: T.forest }}>
+            {weightDelta} kg
+          </div>
+        </div>
+
+        <div className="relative h-1.5 rounded-full mb-2 bg-white/20">
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white"
+            style={{ left: `${trackPct}%`, transform: "translate(-50%, -50%)" }}
+          />
+        </div>
+        <div className="flex justify-between text-xs font-mono-num text-white/70">
+          <span>oggi</span>
+          <span>{stats.target} kg obiettivo</span>
+        </div>
+      </div>
+
+      <div className={`${GLASS} rounded-[28px] p-7 mt-6`}>
         <div className="grid grid-cols-3 gap-4">
           <Ring value={stats.weight} max={stats.weight + 5} icon={Scale} label="Peso" sub="kg" />
           <Ring value={stats.water} max={stats.waterTarget} icon={Droplet} label="Acqua" sub={`/ ${stats.waterTarget}`} />
