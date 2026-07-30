@@ -1,7 +1,9 @@
 /**
- * Design system condiviso da tutte le pagine di AC UP.
- * Token ufficiali da docs/03_DESIGN_TOKENS.md + le estensioni
- * (vetro, corallo per i titoli) chieste in seguito.
+ * Design system condiviso da tutte le pagine di AC UP — stile "vetro
+ * liquido": sfondo a gradiente vivido con i colori del brand, card di
+ * vetro semi-trasparenti sopra, testo bianco. I numeri/icone dentro gli
+ * anelli usano un cerchio bianco pieno (non trasparente) con testo scuro,
+ * altrimenti bianco su vetro chiaro diventa illeggibile.
  */
 export const T = {
   sage: "#5E8C61",
@@ -14,11 +16,16 @@ export const T = {
   carbs: "#F2994A",
   fat: "#62C370",
   coral: "#E76F51",
+  cream: "#FFE8D6", // per i titoli di sezione sopra sfondo colorato
 };
 
-/** Pannello "vetro": bianco semi-trasparente + blur, bordo chiaro, ombra leggera. */
-export const GLASS =
-  "bg-white/60 backdrop-blur-xl border border-white/70 shadow-[0_8px_30px_rgba(30,43,34,0.06)]";
+/** Sfondo a gradiente pieno pagina. */
+export const PAGE_GRADIENT =
+  "linear-gradient(135deg, #2E4A31 0%, #5E8C61 28%, #E76F51 62%, #F2994A 100%)";
 
-/** Titolo di sezione: maiuscolo, grassetto, corallo. */
+/** Pannello di vetro sopra lo sfondo colorato. */
+export const GLASS =
+  "bg-white/15 backdrop-blur-2xl border border-white/25 shadow-[0_8px_32px_rgba(0,0,0,0.12)]";
+
+/** Titolo di sezione: maiuscolo, grassetto, color crema (leggibile su sfondo colorato). */
 export const SECTION_TITLE = "font-bold uppercase tracking-wider";
