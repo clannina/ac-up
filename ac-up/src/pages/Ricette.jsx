@@ -10,6 +10,9 @@ const FOOD_GROUP_LABELS = {
   legumi: "Legumi",
   uova_latticini: "Uova & Latticini",
   colazioni: "Colazioni",
+  spuntini: "Spuntini",
+  merende: "Merende",
+  extra: "Sfizi extra",
 };
 
 function RecipeCard({ recipe }) {

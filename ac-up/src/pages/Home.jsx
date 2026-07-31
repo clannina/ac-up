@@ -56,9 +56,9 @@ const MEAL_FOOD_GROUPS = {
   Cena: ["carne", "pesce", "legumi"],
 };
 
-// Sfizi occasionali (pizza, gelato, dolci...): compaiono solo tra le
-// alternative sfogliabili di Pranzo/Cena, mai nel piano automatico.
-const TREAT_SLOTS = new Set(["Pranzo", "Cena"]);
+// Sfizi occasionali (pizza, gelato, dolci...): compaiono tra le alternative
+// sfogliabili di ogni pasto, mai nel piano automatico generato in Menu.
+const TREAT_SLOTS = new Set(["Colazione", "Spuntino", "Pranzo", "Merenda", "Cena"]);
 
 // Dentro "uova_latticini" ci sono anche piatti cucinati (frittate, omelette,
 // uova strapazzate) che non sono spuntini veloci: per Spuntino/Merenda li
