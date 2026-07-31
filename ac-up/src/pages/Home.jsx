@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Check,
@@ -22,6 +22,7 @@ import { T, GLASS } from "../lib/theme";
 import { Page, SectionTitle, IconChip, Ring } from "../components/ui";
 import { useAuth } from "../lib/AuthContext";
 import { supabase } from "../supabaseClient";
+import { loadTodayWater, saveTodayWater } from "../lib/water";
 
 const POSITIVE_MESSAGES = [
   { emoji: "🌱", text: "Un passo alla volta è comunque un passo avanti." },
@@ -55,6 +56,10 @@ const MEAL_FOOD_GROUPS = {
   Cena: ["carne", "pesce", "legumi"],
 };
 
+// Sfizi occasionali (pizza, gelato, dolci...): compaiono solo tra le
+// alternative sfogliabili di Pranzo/Cena, mai nel piano automatico.
+const TREAT_SLOTS = new Set(["Pranzo", "Cena"]);
+
 // Dentro "uova_latticini" ci sono anche piatti cucinati (frittate, omelette,
 // uova strapazzate) che non sono spuntini veloci: per Spuntino/Merenda li
 // escludiamo, tenendo solo le combinazioni assemblate al volo.
@@ -85,16 +90,27 @@ function MealRow({ meal, onToggle, onSwap, dailyTotal, calorieTarget, locked }) 
   const toggleOpen = async () => {
     if (!open && alternatives === null) {
       setLoadingAlts(true);
-      const pool = MEAL_FOOD_GROUPS[meal.name] ?? ["carne", "pesce", "legumi"];
+      const isTreatSlot = TREAT_SLOTS.has(meal.name);
+      const pool = isTreatSlot
+        ? [...(MEAL_FOOD_GROUPS[meal.name] ?? []), "extra"]
+        : MEAL_FOOD_GROUPS[meal.name] ?? ["carne", "pesce", "legumi"];
+
       const { data, error } = await supabase
         ? await supabase.from("recipes").select("*").in("food_group", pool)
         : { data: [], error: null };
 
-      const list = error ? [] : (data ?? [])
-        .filter((r) => r.name !== meal.recipe && r.kcal != null)
+      const all = error ? [] : (data ?? []).filter((r) => r.name !== meal.recipe && r.kcal != null);
+      const normal = all
+        .filter((r) => r.food_group !== "extra")
         .filter((r) => !SNACK_SLOTS.has(meal.name) || isQuickSnack(r.name))
         .sort((a, b) => Math.abs(a.kcal - meal.kcal) - Math.abs(b.kcal - meal.kcal))
-        .slice(0, 8);
+        .slice(0, 6);
+      // Un paio di sfizi sempre visibili, non nascosti dall'ordinamento per calorie.
+      const treats = isTreatSlot
+        ? all.filter((r) => r.food_group === "extra").sort(() => Math.random() - 0.5).slice(0, 2)
+        : [];
+
+      const list = [...normal, ...treats];
 
       setAlternatives(list);
       setLoadingAlts(false);
@@ -174,7 +190,10 @@ function MealRow({ meal, onToggle, onSwap, dailyTotal, calorieTarget, locked }) 
                     className="w-full rounded-2xl p-3 text-left transition hover:bg-white/15 block"
                     style={{ background: "rgba(255,255,255,0.08)" }}
                   >
-                    <p className="text-sm font-medium text-white">{alt.name}</p>
+                    <p className="text-sm font-medium text-white">
+                      {alt.food_group === "extra" && "🎉 "}
+                      {alt.name}
+                    </p>
                     <div className="flex items-center justify-between mt-1.5">
                       <span
                         className="text-xs"
@@ -204,6 +223,12 @@ export default function Home() {
   const [meals, setMeals] = useState(initialMeals);
   const [water, setWater] = useState(0);
   const [planConfirmed, setPlanConfirmed] = useState(false);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      loadTodayWater(session.user.id).then(setWater);
+    }
+  }, [session?.user?.id]);
 
   const displayName =
     profile?.display_name || session?.user?.email?.split("@")[0] || "";
@@ -310,7 +335,11 @@ export default function Home() {
           <Ring value={water} max={waterTarget} icon={Droplet} label="Acqua" />
         </div>
         <button
-          onClick={() => setWater((w) => Math.min(w + 1, waterTarget))}
+          onClick={() => {
+            const next = Math.min(water + 1, waterTarget);
+            setWater(next);
+            if (session?.user?.id) saveTodayWater(session.user.id, next);
+          }}
           className="w-full mt-6 pt-5 flex items-center justify-center gap-1.5 text-sm font-semibold text-white"
           style={{ borderTop: "1px solid rgba(255,255,255,0.2)" }}
         >
