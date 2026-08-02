@@ -204,8 +204,15 @@ export default function AcHome() {
   }
 
   return (
-    <div className="min-h-screen pb-24 px-4 pt-6" style={{ background: T.paper, color: T.stone }}>
-      <h1 className="text-2xl font-bold mb-4">AC Home</h1>
+    <div
+      className="min-h-screen pb-24 px-4 pt-6"
+      style={{
+        background: "linear-gradient(160deg, #1B4F72 0%, #2E86AB 45%, #5FCFC0 100%)",
+        backgroundAttachment: "fixed",
+        color: T.stone,
+      }}
+    >
+      <h1 className="text-2xl font-bold mb-4" style={{ color: "#fff" }}>AC Home</h1>
 
       <div className="flex gap-2 mb-4">
         {[
@@ -218,7 +225,7 @@ export default function AcHome() {
             key={s.id}
             onClick={() => setScheda(s.id)}
             className="flex-1 py-2 rounded-2xl text-xs font-medium"
-            style={scheda === s.id ? { background: T.forest, color: "#fff" } : { background: "rgba(0,0,0,0.05)", color: T.stone }}
+            style={scheda === s.id ? { background: T.forest, color: "#fff" } : { background: "rgba(255,255,255,0.25)", color: "#fff" }}
           >
             {s.label}
           </button>
@@ -235,7 +242,7 @@ export default function AcHome() {
               style={
                 gruppo === g.id
                   ? { background: T.forest, color: "#fff" }
-                  : { background: "rgba(0,0,0,0.05)", color: T.stone }
+                  : { background: "rgba(255,255,255,0.25)", color: "#fff" }
               }
             >
               {g.emoji} {g.label}
@@ -246,7 +253,7 @@ export default function AcHome() {
 
       {scheda === "spese" && (
         <>
-          <form onSubmit={handleSalva} className="rounded-3xl p-4 mb-6" style={{ background: "rgba(0,0,0,0.03)" }}>
+          <form onSubmit={handleSalva} className="rounded-3xl p-4 mb-6" style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(6px)" }}>
             <label className="block text-xs opacity-60 mb-1">Sottocategoria</label>
             <div className="flex gap-2 mb-3">
               <select
@@ -324,7 +331,7 @@ export default function AcHome() {
             </button>
           </form>
 
-          <div className="rounded-2xl p-4 mb-4 flex justify-between" style={{ background: "rgba(0,0,0,0.03)" }}>
+          <div className="rounded-2xl p-4 mb-4 flex justify-between" style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(6px)" }}>
             <div>
               <p className="text-xs opacity-60">Totale mese</p>
               <p className="font-mono font-semibold text-lg">
@@ -337,11 +344,11 @@ export default function AcHome() {
             </div>
           </div>
 
-          <h2 className="text-sm font-semibold mb-2 opacity-70">Spese di questo mese</h2>
+          <h2 className="text-sm font-semibold mb-2" style={{ color: "#fff" }}>Spese di questo mese</h2>
           <div className="flex flex-col gap-2">
-            {spese.length === 0 && <p className="text-sm opacity-50">Nessuna spesa registrata.</p>}
+            {spese.length === 0 && <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessuna spesa registrata.</p>}
             {spese.map((s) => (
-              <div key={s.id} className="rounded-2xl px-4 py-3 flex justify-between items-center" style={{ background: "rgba(0,0,0,0.03)" }}>
+              <div key={s.id} className="rounded-2xl px-4 py-3 flex justify-between items-center" style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(6px)" }}>
                 <div>
                   <p className="text-sm font-medium">
                     {s.ac_home_categorie?.nome || "—"} {s.ricorrente_id && <span className="text-xs opacity-50">· ricorrente</span>}
@@ -357,7 +364,7 @@ export default function AcHome() {
 
       {scheda === "budget" && (
         <>
-          <div className="rounded-2xl p-4 mb-4 flex justify-between" style={{ background: "rgba(0,0,0,0.03)" }}>
+          <div className="rounded-2xl p-4 mb-4 flex justify-between" style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(6px)" }}>
             <div>
               <p className="text-xs opacity-60">Speso questo mese</p>
               <p className="font-mono font-semibold text-lg">
@@ -372,11 +379,11 @@ export default function AcHome() {
             </div>
           </div>
 
-          <h2 className="text-sm font-semibold mb-2 opacity-70">
+          <h2 className="text-sm font-semibold mb-2" style={{ color: "#fff" }}>
             Budget di {oggi.toLocaleDateString("it-IT", { month: "long", year: "numeric" })}
           </h2>
           <div className="flex flex-col gap-3">
-            {categorie.length === 0 && <p className="text-sm opacity-50">Crea prima una sottocategoria nella scheda Spese.</p>}
+            {categorie.length === 0 && <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Crea prima una sottocategoria nella scheda Spese.</p>}
             {categorie.map((c) => {
               const budgetRiga = budget.find((b) => b.categoria_id === c.id);
               const speso = totaleSpesoCategoria(c.id);
@@ -385,7 +392,7 @@ export default function AcHome() {
               const sforato = importoBudget > 0 && speso > importoBudget;
 
               return (
-                <div key={c.id} className="rounded-2xl p-4" style={{ background: "rgba(0,0,0,0.03)" }}>
+                <div key={c.id} className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(6px)" }}>
                   <div className="flex justify-between items-center mb-2">
                     <p className="text-sm font-medium">{c.nome}</p>
                     <p className="text-xs font-mono opacity-70">
@@ -429,11 +436,11 @@ export default function AcHome() {
 
       {scheda === "ricorrenti" && (
         <>
-          <p className="text-xs opacity-60 mb-3">
+          <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.75)" }}>
             Le spese ricorrenti (mutuo, rate, abbonamenti) vengono aggiunte automaticamente ogni mese, al giorno indicato, appena apri l'app.
           </p>
 
-          <div className="rounded-3xl p-4 mb-6" style={{ background: "rgba(0,0,0,0.03)" }}>
+          <div className="rounded-3xl p-4 mb-6" style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(6px)" }}>
             <label className="block text-xs opacity-60 mb-1">Categoria</label>
             <select
               value={nuovaRicorrente.categoria_id}
@@ -490,11 +497,11 @@ export default function AcHome() {
             </button>
           </div>
 
-          <h2 className="text-sm font-semibold mb-2 opacity-70">Le tue spese ricorrenti</h2>
+          <h2 className="text-sm font-semibold mb-2" style={{ color: "#fff" }}>Le tue spese ricorrenti</h2>
           <div className="flex flex-col gap-2">
-            {ricorrenti.length === 0 && <p className="text-sm opacity-50">Nessuna spesa ricorrente impostata.</p>}
+            {ricorrenti.length === 0 && <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessuna spesa ricorrente impostata.</p>}
             {ricorrenti.map((r) => (
-              <div key={r.id} className="rounded-2xl px-4 py-3 flex justify-between items-center" style={{ background: "rgba(0,0,0,0.03)", opacity: r.attiva ? 1 : 0.5 }}>
+              <div key={r.id} className="rounded-2xl px-4 py-3 flex justify-between items-center" style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(6px)", opacity: r.attiva ? 1 : 0.5 }}>
                 <div>
                   <p className="text-sm font-medium">{r.descrizione || r.ac_home_categorie?.nome}</p>
                   <p className="text-xs opacity-50">{r.ac_home_categorie?.nome} · ogni {r.giorno_mese} del mese</p>
@@ -516,7 +523,7 @@ export default function AcHome() {
 
       {scheda === "scadenze" && (
         <>
-          <div className="rounded-2xl p-4 mb-4" style={{ background: "rgba(0,0,0,0.03)" }}>
+          <div className="rounded-2xl p-4 mb-4" style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(6px)" }}>
             <p className="text-sm font-medium mb-1">Notifiche push</p>
             <p className="text-xs opacity-60 mb-2">
               Ricevi un avviso a 5, 2 e 1 giorno dalla scadenza, anche ad app chiusa.
@@ -535,7 +542,7 @@ export default function AcHome() {
             {pushErrore && <p className="text-xs text-red-600 mt-2">{pushErrore}</p>}
           </div>
 
-          <div className="rounded-3xl p-4 mb-6" style={{ background: "rgba(0,0,0,0.03)" }}>
+          <div className="rounded-3xl p-4 mb-6" style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(6px)" }}>
             <label className="block text-xs opacity-60 mb-1">Titolo</label>
             <input
               value={nuovaScadenza.titolo}
@@ -576,13 +583,13 @@ export default function AcHome() {
             </button>
           </div>
 
-          <h2 className="text-sm font-semibold mb-2 opacity-70">Le tue scadenze</h2>
+          <h2 className="text-sm font-semibold mb-2" style={{ color: "#fff" }}>Le tue scadenze</h2>
           <div className="flex flex-col gap-2">
-            {scadenze.length === 0 && <p className="text-sm opacity-50">Nessuna scadenza impostata.</p>}
+            {scadenze.length === 0 && <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessuna scadenza impostata.</p>}
             {scadenze.map((s) => {
               const giorni = giorniMancanti(s.data_scadenza);
               return (
-                <div key={s.id} className="rounded-2xl px-4 py-3 flex justify-between items-center" style={{ background: "rgba(0,0,0,0.03)" }}>
+                <div key={s.id} className="rounded-2xl px-4 py-3 flex justify-between items-center" style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(6px)" }}>
                   <div>
                     <p className="text-sm font-medium">{s.titolo}</p>
                     <p className="text-xs opacity-50">
