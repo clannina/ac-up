@@ -7,6 +7,7 @@ import Ricette from "./pages/Ricette.jsx";
 import Spesa from "./pages/Spesa.jsx";
 import Salute from "./pages/Salute.jsx";
 import Profilo from "./pages/Profilo.jsx";
+import AcHome from "./pages/AcHome.jsx";
 
 export default function App() {
   return (
@@ -21,9 +22,7 @@ export default function App() {
         <Route path="spesa" element={<Spesa />} />
         <Route path="salute" element={<Salute />} />
         <Route path="profilo" element={<Profilo />} />
-
-        {/* Placeholder finche' non costruiamo AC Home */}
-        <Route path="ac-home" element={<div className="p-6">AC Home in arrivo</div>} />
+        <Route path="ac-home" element={<AcHome />} />
       </Route>
     </Routes>
   );
