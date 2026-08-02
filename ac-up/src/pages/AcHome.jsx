@@ -14,7 +14,11 @@ import {
   eliminaRicorrente,
   generaSpeseRicorrentiDelMese,
   getTotaleGenerale,
+  getScadenze,
+  creaScadenza,
+  eliminaScadenza,
 } from "../lib/acHome";
+import { attivaNotifichePush, notifichePushAttive } from "../lib/push";
 
 const GRUPPI = [
   { id: "casa", label: "Casa", emoji: "🏠" },
@@ -42,6 +46,10 @@ export default function AcHome() {
   const [budgetInput, setBudgetInput] = useState({});
   const [ricorrenti, setRicorrenti] = useState([]);
   const [nuovaRicorrente, setNuovaRicorrente] = useState({ categoria_id: "", importo: "", descrizione: "", giorno_mese: "1" });
+  const [scadenze, setScadenze] = useState([]);
+  const [nuovaScadenza, setNuovaScadenza] = useState({ categoria_id: "", titolo: "", data_scadenza: "" });
+  const [pushAttive, setPushAttive] = useState(false);
+  const [pushErrore, setPushErrore] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [errore, setErrore] = useState(null);
 
@@ -52,7 +60,9 @@ export default function AcHome() {
       caricaSpese();
       caricaBudget();
       caricaRicorrenti();
+      caricaScadenze();
     });
+    notifichePushAttive().then(setPushAttive);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -152,6 +162,41 @@ export default function AcHome() {
     caricaRicorrenti();
   }
 
+  async function caricaScadenze() {
+    const lista = await getScadenze();
+    setScadenze(lista);
+  }
+
+  async function handleNuovaScadenza() {
+    if (!nuovaScadenza.titolo.trim() || !nuovaScadenza.data_scadenza) return;
+    await creaScadenza(nuovaScadenza);
+    setNuovaScadenza({ categoria_id: "", titolo: "", data_scadenza: "" });
+    caricaScadenze();
+  }
+
+  async function handleEliminaScadenza(id) {
+    await eliminaScadenza(id);
+    caricaScadenze();
+  }
+
+  async function handleAttivaPush() {
+    setPushErrore(null);
+    try {
+      await attivaNotifichePush();
+      setPushAttive(true);
+    } catch (err) {
+      setPushErrore(err.message);
+    }
+  }
+
+  function giorniMancanti(dataScadenza) {
+    const oggiZero = new Date();
+    oggiZero.setHours(0, 0, 0, 0);
+    const d = new Date(dataScadenza);
+    d.setHours(0, 0, 0, 0);
+    return Math.round((d - oggiZero) / (1000 * 60 * 60 * 24));
+  }
+
   function totaleSpesoCategoria(categoria_id) {
     return spese
       .filter((s) => s.categoria_id === categoria_id)
@@ -167,6 +212,7 @@ export default function AcHome() {
           { id: "spese", label: "Spese" },
           { id: "budget", label: "Budget" },
           { id: "ricorrenti", label: "Ricorrenti" },
+          { id: "scadenze", label: "Scadenze" },
         ].map((s) => (
           <button
             key={s.id}
@@ -179,7 +225,7 @@ export default function AcHome() {
         ))}
       </div>
 
-      {scheda !== "ricorrenti" && (
+      {scheda !== "ricorrenti" && scheda !== "scadenze" && (
         <div className="flex gap-2 mb-5">
           {GRUPPI.map((g) => (
             <button
@@ -464,6 +510,92 @@ export default function AcHome() {
                 </div>
               </div>
             ))}
+          </div>
+        </>
+      )}
+
+      {scheda === "scadenze" && (
+        <>
+          <div className="rounded-2xl p-4 mb-4" style={{ background: "rgba(0,0,0,0.03)" }}>
+            <p className="text-sm font-medium mb-1">Notifiche push</p>
+            <p className="text-xs opacity-60 mb-2">
+              Ricevi un avviso a 5, 2 e 1 giorno dalla scadenza, anche ad app chiusa.
+            </p>
+            {pushAttive ? (
+              <p className="text-xs font-medium" style={{ color: T.forest }}>✓ Notifiche attive su questo dispositivo</p>
+            ) : (
+              <button
+                onClick={handleAttivaPush}
+                className="w-full py-2 rounded-xl text-sm font-medium"
+                style={{ background: T.forest, color: "#fff" }}
+              >
+                Attiva notifiche su questo dispositivo
+              </button>
+            )}
+            {pushErrore && <p className="text-xs text-red-600 mt-2">{pushErrore}</p>}
+          </div>
+
+          <div className="rounded-3xl p-4 mb-6" style={{ background: "rgba(0,0,0,0.03)" }}>
+            <label className="block text-xs opacity-60 mb-1">Titolo</label>
+            <input
+              value={nuovaScadenza.titolo}
+              onChange={(e) => setNuovaScadenza((prev) => ({ ...prev, titolo: e.target.value }))}
+              placeholder="es. Revisione auto"
+              className="w-full rounded-xl px-3 py-2 text-sm mb-3"
+              style={{ background: "#fff" }}
+            />
+
+            <label className="block text-xs opacity-60 mb-1">Categoria (opzionale)</label>
+            <select
+              value={nuovaScadenza.categoria_id}
+              onChange={(e) => setNuovaScadenza((prev) => ({ ...prev, categoria_id: e.target.value }))}
+              className="w-full rounded-xl px-3 py-2 text-sm mb-3"
+              style={{ background: "#fff" }}
+            >
+              <option value="">Nessuna categoria collegata</option>
+              {categorie.map((c) => (
+                <option key={c.id} value={c.id}>{GRUPPI.find((g) => g.id === c.gruppo)?.emoji} {c.nome}</option>
+              ))}
+            </select>
+
+            <label className="block text-xs opacity-60 mb-1">Data di scadenza</label>
+            <input
+              type="date"
+              value={nuovaScadenza.data_scadenza}
+              onChange={(e) => setNuovaScadenza((prev) => ({ ...prev, data_scadenza: e.target.value }))}
+              className="w-full rounded-xl px-3 py-2 text-sm mb-3"
+              style={{ background: "#fff" }}
+            />
+
+            <button
+              onClick={handleNuovaScadenza}
+              className="w-full py-2.5 rounded-xl font-medium text-sm"
+              style={{ background: T.forest, color: "#fff" }}
+            >
+              Aggiungi scadenza
+            </button>
+          </div>
+
+          <h2 className="text-sm font-semibold mb-2 opacity-70">Le tue scadenze</h2>
+          <div className="flex flex-col gap-2">
+            {scadenze.length === 0 && <p className="text-sm opacity-50">Nessuna scadenza impostata.</p>}
+            {scadenze.map((s) => {
+              const giorni = giorniMancanti(s.data_scadenza);
+              return (
+                <div key={s.id} className="rounded-2xl px-4 py-3 flex justify-between items-center" style={{ background: "rgba(0,0,0,0.03)" }}>
+                  <div>
+                    <p className="text-sm font-medium">{s.titolo}</p>
+                    <p className="text-xs opacity-50">
+                      {s.data_scadenza} {s.ac_home_categorie?.nome ? `· ${s.ac_home_categorie.nome}` : ""} ·{" "}
+                      {giorni < 0 ? "scaduta" : giorni === 0 ? "oggi" : `tra ${giorni} giorni`}
+                    </p>
+                  </div>
+                  <button onClick={() => handleEliminaScadenza(s.id)} className="text-xs px-2 py-1 rounded-lg text-red-600" style={{ background: "rgba(224,82,82,0.1)" }}>
+                    Elimina
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </>
       )}
