@@ -4,5 +4,11 @@
       "path": "/api/check-scadenze",
       "schedule": "0 11 * * *"
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
   ]
 }
