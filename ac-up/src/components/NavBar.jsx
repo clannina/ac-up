@@ -3,7 +3,7 @@ import { Home, CalendarDays, BookOpen, ShoppingCart, HeartPulse, User } from "lu
 import { T } from "../lib/theme";
 
 const LINKS = [
-  { to: "/", label: "Home", icon: Home, end: true },
+  { to: "/ac-up", label: "Home", icon: Home, end: true },
   { to: "/menu", label: "Menu", icon: CalendarDays },
   { to: "/ricette", label: "Ricette", icon: BookOpen },
   { to: "/spesa", label: "Spesa", icon: ShoppingCart },
