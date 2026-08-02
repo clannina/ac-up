@@ -38,11 +38,11 @@ export async function getSpese({ mese, anno, gruppo } = {}) {
   return gruppo ? data.filter((s) => s.ac_home_categorie?.gruppo === gruppo) : data;
 }
 
-export async function creaSpesa({ categoria_id, importo, data, nota, foto_url }) {
+export async function creaSpesa({ categoria_id, importo, data, nota, foto_url, ricorrente_id }) {
   const { data: userData } = await supabase.auth.getUser();
   const { data: spesa, error } = await supabase
     .from("ac_home_spese")
-    .insert({ categoria_id, importo, data, nota, foto_url, user_id: userData.user.id })
+    .insert({ categoria_id, importo, data, nota, foto_url, ricorrente_id: ricorrente_id || null, user_id: userData.user.id })
     .select()
     .single();
   if (error) throw error;
@@ -55,15 +55,11 @@ export async function eliminaSpesa(id) {
 }
 
 // --- Upload foto scontrino ---
-// Salva sotto ac-home-scontrini/<user_id>/<timestamp>-<nomefile>, come richiesto dalla policy dello storage.
 export async function caricaFotoScontrino(file) {
   const { data: userData } = await supabase.auth.getUser();
   const path = `${userData.user.id}/${Date.now()}-${file.name}`;
   const { error } = await supabase.storage.from("ac-home-scontrini").upload(path, file);
   if (error) throw error;
-  const { data } = supabase.storage.from("ac-home-scontrini").getPublicUrl(path);
-  // Il bucket e' privato: questo url va usato solo per generare, quando serve visualizzarla,
-  // una signed url a parte (vedi getUrlFotoScontrino).
   return path;
 }
 
@@ -88,7 +84,6 @@ export async function getBudget(mese, anno) {
 
 export async function impostaBudget({ categoria_id, mese, anno, importo }) {
   const { data: userData } = await supabase.auth.getUser();
-  // upsert manuale: se esiste gia' un budget per quella categoria/mese/anno, lo aggiorna
   const { data: esistente } = await supabase
     .from("ac_home_budget")
     .select("id")
@@ -115,4 +110,74 @@ export async function impostaBudget({ categoria_id, mese, anno, importo }) {
     .single();
   if (error) throw error;
   return data;
+}
+
+// --- Spese ricorrenti (mutuo, rate, abbonamenti...) ---
+export async function getRicorrenti() {
+  const { data, error } = await supabase
+    .from("ac_home_ricorrenti")
+    .select("*, ac_home_categorie(nome, gruppo)")
+    .order("created_at");
+  if (error) throw error;
+  return data;
+}
+
+export async function creaRicorrente({ categoria_id, importo, descrizione, giorno_mese }) {
+  const { data: userData } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("ac_home_ricorrenti")
+    .insert({ categoria_id, importo, descrizione, giorno_mese: giorno_mese || 1, user_id: userData.user.id })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function toggleRicorrente(id, attiva) {
+  const { error } = await supabase.from("ac_home_ricorrenti").update({ attiva }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function eliminaRicorrente(id) {
+  const { error } = await supabase.from("ac_home_ricorrenti").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// Genera automaticamente, per il mese/anno indicati, le spese derivate dalle ricorrenti attive
+// che non sono ancora state create per quel mese (controllo tramite ricorrente_id).
+// Va chiamata all'apertura dell'app: se una ricorrente e' gia' stata generata questo mese, non duplica nulla.
+export async function generaSpeseRicorrentiDelMese(mese, anno) {
+  const ricorrenti = await getRicorrenti();
+  const attive = ricorrenti.filter((r) => r.attiva);
+  if (attive.length === 0) return;
+
+  const inizio = `${anno}-${String(mese).padStart(2, "0")}-01`;
+  const fine = `${anno}-${String(mese).padStart(2, "0")}-31`;
+
+  const { data: giaGenerate, error } = await supabase
+    .from("ac_home_spese")
+    .select("ricorrente_id")
+    .gte("data", inizio)
+    .lte("data", fine)
+    .not("ricorrente_id", "is", null);
+  if (error) throw error;
+
+  const idGiaGenerati = new Set(giaGenerate.map((s) => s.ricorrente_id));
+  const daGenerare = attive.filter((r) => !idGiaGenerati.has(r.id));
+
+  const ultimoGiorno = new Date(anno, mese, 0).getDate();
+  const { data: userData } = await supabase.auth.getUser();
+
+  for (const r of daGenerare) {
+    const giorno = Math.min(r.giorno_mese, ultimoGiorno);
+    const data = `${anno}-${String(mese).padStart(2, "0")}-${String(giorno).padStart(2, "0")}`;
+    await supabase.from("ac_home_spese").insert({
+      categoria_id: r.categoria_id,
+      importo: r.importo,
+      data,
+      nota: r.descrizione,
+      ricorrente_id: r.id,
+      user_id: userData.user.id,
+    });
+  }
 }
