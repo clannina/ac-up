@@ -13,6 +13,7 @@ import {
   toggleRicorrente,
   eliminaRicorrente,
   generaSpeseRicorrentiDelMese,
+  getTotaleGenerale,
 } from "../lib/acHome";
 
 const GRUPPI = [
@@ -36,6 +37,7 @@ export default function AcHome() {
   const [nota, setNota] = useState("");
   const [foto, setFoto] = useState(null);
   const [spese, setSpese] = useState([]);
+  const [totaleGenerale, setTotaleGenerale] = useState(0);
   const [budget, setBudget] = useState([]);
   const [budgetInput, setBudgetInput] = useState({});
   const [ricorrenti, setRicorrenti] = useState([]);
@@ -58,8 +60,14 @@ export default function AcHome() {
     caricaCategorie();
     caricaSpese();
     caricaBudget();
+    caricaTotaleGenerale();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gruppo]);
+
+  async function caricaTotaleGenerale() {
+    const tot = await getTotaleGenerale(gruppo);
+    setTotaleGenerale(tot);
+  }
 
   async function caricaCategorie() {
     const cats = await getCategorie(gruppo);
@@ -270,6 +278,19 @@ export default function AcHome() {
             </button>
           </form>
 
+          <div className="rounded-2xl p-4 mb-4 flex justify-between" style={{ background: "rgba(0,0,0,0.03)" }}>
+            <div>
+              <p className="text-xs opacity-60">Totale mese</p>
+              <p className="font-mono font-semibold text-lg">
+                € {spese.reduce((tot, s) => tot + Number(s.importo), 0).toFixed(2)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs opacity-60">Totale generale</p>
+              <p className="font-mono font-semibold text-lg">€ {totaleGenerale.toFixed(2)}</p>
+            </div>
+          </div>
+
           <h2 className="text-sm font-semibold mb-2 opacity-70">Spese di questo mese</h2>
           <div className="flex flex-col gap-2">
             {spese.length === 0 && <p className="text-sm opacity-50">Nessuna spesa registrata.</p>}
@@ -290,6 +311,21 @@ export default function AcHome() {
 
       {scheda === "budget" && (
         <>
+          <div className="rounded-2xl p-4 mb-4 flex justify-between" style={{ background: "rgba(0,0,0,0.03)" }}>
+            <div>
+              <p className="text-xs opacity-60">Speso questo mese</p>
+              <p className="font-mono font-semibold text-lg">
+                € {spese.reduce((tot, s) => tot + Number(s.importo), 0).toFixed(2)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs opacity-60">Budget totale mese</p>
+              <p className="font-mono font-semibold text-lg">
+                € {budget.reduce((tot, b) => tot + Number(b.importo), 0).toFixed(2)}
+              </p>
+            </div>
+          </div>
+
           <h2 className="text-sm font-semibold mb-2 opacity-70">
             Budget di {oggi.toLocaleDateString("it-IT", { month: "long", year: "numeric" })}
           </h2>
