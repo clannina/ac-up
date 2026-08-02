@@ -7,7 +7,11 @@ import Ricette from "./pages/Ricette.jsx";
 import Spesa from "./pages/Spesa.jsx";
 import Salute from "./pages/Salute.jsx";
 import Profilo from "./pages/Profilo.jsx";
-import AcHome from "./pages/AcHome.jsx";
+import AcHomeDashboard from "./pages/achome/AcHomeDashboard.jsx";
+import AcHomeSpese from "./pages/achome/AcHomeSpese.jsx";
+import AcHomeBudget from "./pages/achome/AcHomeBudget.jsx";
+import AcHomeRicorrenti from "./pages/achome/AcHomeRicorrenti.jsx";
+import AcHomeScadenze from "./pages/achome/AcHomeScadenze.jsx";
 
 export default function App() {
   return (
@@ -22,7 +26,12 @@ export default function App() {
         <Route path="spesa" element={<Spesa />} />
         <Route path="salute" element={<Salute />} />
         <Route path="profilo" element={<Profilo />} />
-        <Route path="ac-home" element={<AcHome />} />
+
+        <Route path="ac-home" element={<AcHomeDashboard />} />
+        <Route path="ac-home/spese" element={<AcHomeSpese />} />
+        <Route path="ac-home/budget" element={<AcHomeBudget />} />
+        <Route path="ac-home/ricorrenti" element={<AcHomeRicorrenti />} />
+        <Route path="ac-home/scadenze" element={<AcHomeScadenze />} />
       </Route>
     </Routes>
   );
