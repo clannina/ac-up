@@ -71,6 +71,17 @@ export async function getUrlFotoScontrino(path) {
   return data.signedUrl;
 }
 
+// Somma di tutte le spese mai registrate per un gruppo (casa/auto/scooter), senza filtro di mese.
+export async function getTotaleGenerale(gruppo) {
+  const { data, error } = await supabase
+    .from("ac_home_spese")
+    .select("importo, ac_home_categorie(gruppo)");
+  if (error) throw error;
+  return data
+    .filter((s) => s.ac_home_categorie?.gruppo === gruppo)
+    .reduce((tot, s) => tot + Number(s.importo), 0);
+}
+
 // --- Budget ---
 export async function getBudget(mese, anno) {
   const { data, error } = await supabase
@@ -181,4 +192,3 @@ export async function generaSpeseRicorrentiDelMese(mese, anno) {
     });
   }
 }
- 
