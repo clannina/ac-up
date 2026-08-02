@@ -1,6 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import Hub from "./Hub.jsx";
-import AcUpGate from "./AcUpGate.jsx";
+import AuthGate from "./AuthGate.jsx";
 import Home from "./pages/Home.jsx";
 import Menu from "./pages/Menu.jsx";
 import Ricette from "./pages/Ricette.jsx";
@@ -13,18 +13,18 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Hub />} />
 
-      {/* Tutte le route di AC UP passano dal gate di autenticazione */}
-      <Route element={<AcUpGate />}>
+      {/* Tutte le route, sia AC UP che AC Home, passano dallo stesso gate di login */}
+      <Route element={<AuthGate />}>
         <Route path="ac-up" element={<Home />} />
         <Route path="menu" element={<Menu />} />
         <Route path="ricette" element={<Ricette />} />
         <Route path="spesa" element={<Spesa />} />
         <Route path="salute" element={<Salute />} />
         <Route path="profilo" element={<Profilo />} />
-      </Route>
 
-      {/* Placeholder finche' non costruiamo AC Home */}
-      <Route path="/ac-home" element={<div className="p-6">AC Home in arrivo</div>} />
+        {/* Placeholder finche' non costruiamo AC Home */}
+        <Route path="ac-home" element={<div className="p-6">AC Home in arrivo</div>} />
+      </Route>
     </Routes>
   );
 }
