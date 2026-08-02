@@ -154,6 +154,50 @@ export async function eliminaRicorrente(id) {
   if (error) throw error;
 }
 
+// --- Scadenze (es. revisione, assicurazione...) ---
+export async function getScadenze() {
+  const { data, error } = await supabase
+    .from("ac_home_scadenze")
+    .select("*, ac_home_categorie(nome, gruppo)")
+    .order("data_scadenza");
+  if (error) throw error;
+  return data;
+}
+
+export async function creaScadenza({ categoria_id, titolo, data_scadenza }) {
+  const { data: userData } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("ac_home_scadenze")
+    .insert({ categoria_id: categoria_id || null, titolo, data_scadenza, user_id: userData.user.id })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function eliminaScadenza(id) {
+  const { error } = await supabase.from("ac_home_scadenze").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// --- Notifiche push ---
+// Salva (o aggiorna, se lo stesso dispositivo si re-iscrive) l'iscrizione alle notifiche push per l'utente corrente.
+export async function salvaPushSubscription(subscription) {
+  const { data: userData } = await supabase.auth.getUser();
+  const raw = subscription.toJSON();
+  const { error } = await supabase.from("ac_home_push_subscriptions").upsert(
+    {
+      endpoint: raw.endpoint,
+      p256dh: raw.keys.p256dh,
+      auth: raw.keys.auth,
+      user_id: userData.user.id,
+    },
+    { onConflict: "endpoint" }
+  );
+  if (error) throw error;
+}
+
+
 // Genera automaticamente, per il mese/anno indicati, le spese derivate dalle ricorrenti attive
 // che non sono ancora state create per quel mese (controllo tramite ricorrente_id).
 // Va chiamata all'apertura dell'app: se una ricorrente e' gia' stata generata questo mese, non duplica nulla.
