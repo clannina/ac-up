@@ -14,7 +14,7 @@ export default function AcHomeNavBar() {
   return (
     <nav className="fixed bottom-4 left-4 right-4 z-40">
       <div
-        className="max-w-xl mx-auto rounded-full flex justify-around py-2 px-1 backdrop-blur-2xl"
+        className="max-w-xl mx-auto rounded-full flex justify-around py-2 px-0.5 backdrop-blur-2xl"
         style={{
           background: "rgba(255,255,255,0.18)",
           border: "1px solid rgba(255,255,255,0.28)",
@@ -26,14 +26,14 @@ export default function AcHomeNavBar() {
             key={to}
             to={to}
             end={end}
-            className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-2xl text-[10px] transition-colors"
+            className="flex flex-col items-center gap-0.5 px-1 py-1.5 rounded-2xl text-[9px] leading-tight transition-colors"
             style={({ isActive }) =>
               isActive
                 ? { background: "rgba(255,255,255,0.95)", color: T.forest }
                 : { color: "rgba(255,255,255,0.85)" }
             }
           >
-            <Icon size={18} />
+            <Icon size={16} />
             {label}
           </NavLink>
         ))}
