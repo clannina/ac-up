@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Home as HomeIcon, Car, Bike } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
-import { getCategorie, getScadenze, creaScadenza, eliminaScadenza } from "../../lib/acHome";
+import { getCategorie, getScadenze, creaScadenza, eliminaScadenza, getVeicoli } from "../../lib/acHome";
 import { attivaNotifichePush, notifichePushAttive } from "../../lib/push";
 
 const GRUPPI = [
@@ -22,16 +22,22 @@ function giorniMancanti(dataScadenza) {
 
 export default function AcHomeScadenze() {
   const [categorie, setCategorie] = useState([]);
+  const [veicoli, setVeicoli] = useState([]);
   const [scadenze, setScadenze] = useState([]);
-  const [nuova, setNuova] = useState({ categoria_id: "", titolo: "", data_scadenza: "" });
+  const [nuova, setNuova] = useState({ categoria_id: "", veicolo_id: "", titolo: "", data_scadenza: "", ricorrenza: "una_tantum" });
   const [pushAttive, setPushAttive] = useState(false);
   const [pushErrore, setPushErrore] = useState(null);
 
   useEffect(() => {
     caricaCategorieTutte();
     caricaScadenze();
+    caricaVeicoli();
     notifichePushAttive().then(setPushAttive);
   }, []);
+
+  async function caricaVeicoli() {
+    setVeicoli(await getVeicoli());
+  }
 
   async function caricaCategorieTutte() {
     const tutte = await Promise.all(GRUPPI.map((g) => getCategorie(g.id)));
@@ -45,7 +51,7 @@ export default function AcHomeScadenze() {
   async function handleNuova() {
     if (!nuova.titolo.trim() || !nuova.data_scadenza) return;
     await creaScadenza(nuova);
-    setNuova({ categoria_id: "", titolo: "", data_scadenza: "" });
+    setNuova({ categoria_id: "", veicolo_id: "", titolo: "", data_scadenza: "", ricorrenza: "una_tantum" });
     caricaScadenze();
   }
 
@@ -93,6 +99,19 @@ export default function AcHomeScadenze() {
           style={{ background: "#fff" }}
         />
 
+        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Veicolo (opzionale)</label>
+        <select
+          value={nuova.veicolo_id}
+          onChange={(e) => setNuova((prev) => ({ ...prev, veicolo_id: e.target.value }))}
+          className="w-full rounded-xl px-3 py-2 text-sm mb-3"
+          style={{ background: "#fff" }}
+        >
+          <option value="">Nessun veicolo collegato</option>
+          {veicoli.map((v) => (
+            <option key={v.id} value={v.id}>{v.nome} {v.targa ? `(${v.targa})` : ""}</option>
+          ))}
+        </select>
+
         <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Categoria (opzionale)</label>
         <select
           value={nuova.categoria_id}
@@ -115,6 +134,18 @@ export default function AcHomeScadenze() {
           style={{ background: "#fff" }}
         />
 
+        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Si ripete</label>
+        <select
+          value={nuova.ricorrenza}
+          onChange={(e) => setNuova((prev) => ({ ...prev, ricorrenza: e.target.value }))}
+          className="w-full rounded-xl px-3 py-2 text-sm mb-3"
+          style={{ background: "#fff" }}
+        >
+          <option value="una_tantum">Una tantum (non si ripete)</option>
+          <option value="annuale">Ogni anno (es. bollo)</option>
+          <option value="biennale">Ogni due anni (es. revisione)</option>
+        </select>
+
         <button onClick={handleNuova} className="w-full py-2.5 rounded-xl font-display text-sm" style={{ background: T.forest, color: "#fff" }}>
           Aggiungi scadenza
         </button>
@@ -130,8 +161,9 @@ export default function AcHomeScadenze() {
               <div>
                 <p className="text-sm font-medium" style={{ color: "#fff" }}>{s.titolo}</p>
                 <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
-                  {s.data_scadenza} {s.ac_home_categorie?.nome ? `· ${s.ac_home_categorie.nome}` : ""} ·{" "}
+                  {s.data_scadenza} {s.ac_home_veicoli?.nome ? `· ${s.ac_home_veicoli.nome}` : ""} {s.ac_home_categorie?.nome ? `· ${s.ac_home_categorie.nome}` : ""} ·{" "}
                   {giorni < 0 ? "scaduta" : giorni === 0 ? "oggi" : `tra ${giorni} giorni`}
+                  {s.ricorrenza !== "una_tantum" && ` · si ripete ${s.ricorrenza === "annuale" ? "ogni anno" : "ogni 2 anni"}`}
                 </p>
               </div>
               <button onClick={() => handleElimina(s.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}>

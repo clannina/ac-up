@@ -1,0 +1,107 @@
+import { useEffect, useState } from "react";
+import { Car, Bike, Trash2 } from "lucide-react";
+import { T, GLASS } from "../../lib/theme";
+import { getVeicoli, creaVeicolo, eliminaVeicolo } from "../../lib/acHome";
+
+const BACKGROUND = "linear-gradient(160deg, #1B4F72 0%, #2E86AB 45%, #5FCFC0 100%)";
+
+export default function AcHomeProfilo() {
+  const [veicoli, setVeicoli] = useState([]);
+  const [nuovo, setNuovo] = useState({ nome: "", targa: "", tipo: "auto" });
+
+  useEffect(() => {
+    caricaVeicoli();
+  }, []);
+
+  async function caricaVeicoli() {
+    setVeicoli(await getVeicoli());
+  }
+
+  async function handleNuovo() {
+    if (!nuovo.nome.trim()) return;
+    await creaVeicolo(nuovo);
+    setNuovo({ nome: "", targa: "", tipo: "auto" });
+    caricaVeicoli();
+  }
+
+  async function handleElimina(id) {
+    await eliminaVeicolo(id);
+    caricaVeicoli();
+  }
+
+  return (
+    <div className="min-h-screen pb-28 px-4 pt-6" style={{ background: BACKGROUND }}>
+      <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Profilo</h1>
+
+      <h2 className="font-display text-sm mb-2" style={{ color: "#fff" }}>I tuoi mezzi</h2>
+      <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.75)" }}>
+        Collega un veicolo a una scadenza (es. revisione, bollo) per tenerne traccia nel tempo.
+      </p>
+
+      <div className={`${GLASS} rounded-3xl p-4 mb-6`}>
+        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Nome</label>
+        <input
+          value={nuovo.nome}
+          onChange={(e) => setNuovo((prev) => ({ ...prev, nome: e.target.value }))}
+          placeholder="es. Panda, Vespa..."
+          className="w-full rounded-xl px-3 py-2 text-sm mb-3"
+          style={{ background: "#fff" }}
+        />
+
+        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Targa (opzionale)</label>
+        <input
+          value={nuovo.targa}
+          onChange={(e) => setNuovo((prev) => ({ ...prev, targa: e.target.value.toUpperCase() }))}
+          placeholder="es. AB123CD"
+          className="w-full rounded-xl px-3 py-2 text-sm mb-3 font-mono-num"
+          style={{ background: "#fff" }}
+        />
+
+        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Tipo</label>
+        <div className="flex gap-2 mb-3">
+          <button
+            onClick={() => setNuovo((prev) => ({ ...prev, tipo: "auto" }))}
+            className="flex-1 py-2 rounded-xl text-sm flex items-center justify-center gap-1.5"
+            style={nuovo.tipo === "auto" ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+          >
+            <Car size={16} /> Auto
+          </button>
+          <button
+            onClick={() => setNuovo((prev) => ({ ...prev, tipo: "scooter" }))}
+            className="flex-1 py-2 rounded-xl text-sm flex items-center justify-center gap-1.5"
+            style={nuovo.tipo === "scooter" ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+          >
+            <Bike size={16} /> Scooter
+          </button>
+        </div>
+
+        <button onClick={handleNuovo} className="w-full py-2.5 rounded-xl font-display text-sm" style={{ background: T.forest, color: "#fff" }}>
+          Aggiungi veicolo
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {veicoli.length === 0 && <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessun veicolo aggiunto.</p>}
+        {veicoli.map((v) => {
+          const Icon = v.tipo === "scooter" ? Bike : Car;
+          return (
+            <div key={v.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`}>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "#fff" }}>
+                  <Icon size={18} color={T.forest} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium" style={{ color: "#fff" }}>{v.nome}</p>
+                  {v.targa && <p className="text-xs font-mono-num" style={{ color: "rgba(255,255,255,0.65)" }}>{v.targa}</p>}
+                </div>
+              </div>
+              <button onClick={() => handleElimina(v.id)} className="p-2 rounded-lg" style={{ background: "rgba(224,82,82,0.35)" }}>
+                <Trash2 size={16} color="#fff" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
