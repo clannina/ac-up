@@ -154,21 +154,51 @@ export async function eliminaRicorrente(id) {
   if (error) throw error;
 }
 
+// --- Veicoli ---
+export async function getVeicoli() {
+  const { data, error } = await supabase.from("ac_home_veicoli").select("*").order("nome");
+  if (error) throw error;
+  return data;
+}
+
+export async function creaVeicolo({ nome, targa, tipo }) {
+  const { data: userData } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("ac_home_veicoli")
+    .insert({ nome, targa, tipo, user_id: userData.user.id })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function eliminaVeicolo(id) {
+  const { error } = await supabase.from("ac_home_veicoli").delete().eq("id", id);
+  if (error) throw error;
+}
+
 // --- Scadenze (es. revisione, assicurazione...) ---
 export async function getScadenze() {
   const { data, error } = await supabase
     .from("ac_home_scadenze")
-    .select("*, ac_home_categorie(nome, gruppo)")
+    .select("*, ac_home_categorie(nome, gruppo), ac_home_veicoli(nome, targa, tipo)")
     .order("data_scadenza");
   if (error) throw error;
   return data;
 }
 
-export async function creaScadenza({ categoria_id, titolo, data_scadenza }) {
+export async function creaScadenza({ categoria_id, veicolo_id, titolo, data_scadenza, ricorrenza }) {
   const { data: userData } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("ac_home_scadenze")
-    .insert({ categoria_id: categoria_id || null, titolo, data_scadenza, user_id: userData.user.id })
+    .insert({
+      categoria_id: categoria_id || null,
+      veicolo_id: veicolo_id || null,
+      titolo,
+      data_scadenza,
+      ricorrenza: ricorrenza || "una_tantum",
+      user_id: userData.user.id,
+    })
     .select()
     .single();
   if (error) throw error;
