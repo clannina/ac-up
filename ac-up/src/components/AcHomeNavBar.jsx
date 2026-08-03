@@ -1,13 +1,14 @@
 import { NavLink } from "react-router-dom";
-import { Home, Receipt, PiggyBank, Repeat, CalendarClock } from "lucide-react";
+import { Home, Receipt, PiggyBank, Repeat, CalendarClock, User } from "lucide-react";
 import { T } from "../lib/theme";
 
 const LINKS = [
   { to: "/ac-home", label: "Home", icon: Home, end: true },
   { to: "/ac-home/spese", label: "Spese", icon: Receipt },
   { to: "/ac-home/budget", label: "Budget", icon: PiggyBank },
-  { to: "/ac-home/ricorrenti", label: "Ricorrenti", icon: Repeat },
+  { to: "/ac-home/ricorrenti", label: "Ricorr.", icon: Repeat },
   { to: "/ac-home/scadenze", label: "Scadenze", icon: CalendarClock },
+  { to: "/ac-home/profilo", label: "Profilo", icon: User },
 ];
 
 export default function AcHomeNavBar() {
