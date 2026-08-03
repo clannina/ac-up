@@ -63,5 +63,27 @@ export default async function handler(req, res) {
     await supabase.from("ac_home_scadenze").update({ [colonnaNotifica]: true }).eq("id", scadenza.id);
   }
 
+  // Fa avanzare automaticamente le scadenze ricorrenti (annuale/biennale) gia' passate,
+  // cosi' l'anno prossimo (o tra due anni) il ciclo di notifiche riparte da solo.
+  const { data: scaduteRicorrenti } = await supabase
+    .from("ac_home_scadenze")
+    .select("*")
+    .lt("data_scadenza", oggi.toISOString().slice(0, 10))
+    .neq("ricorrenza", "una_tantum");
+
+  for (const s of scaduteRicorrenti || []) {
+    const prossima = new Date(s.data_scadenza);
+    prossima.setFullYear(prossima.getFullYear() + (s.ricorrenza === "biennale" ? 2 : 1));
+    await supabase
+      .from("ac_home_scadenze")
+      .update({
+        data_scadenza: prossima.toISOString().slice(0, 10),
+        notificato_1: false,
+        notificato_2: false,
+        notificato_5: false,
+      })
+      .eq("id", s.id);
+  }
+
   res.status(200).json({ ok: true, notificheInviate });
 }
