@@ -53,7 +53,7 @@ export default function AcHomeRicorrenti() {
   }
 
   return (
-    <div className="min-h-screen pb-28 px-4 pt-6" style={{ background: BACKGROUND, backgroundAttachment: "fixed" }}>
+    <div className="min-h-screen pb-28 px-4 pt-6" style={{ background: BACKGROUND }}>
       <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Ricorrenti</h1>
 
       <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.75)" }}>

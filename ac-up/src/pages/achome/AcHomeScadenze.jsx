@@ -65,7 +65,7 @@ export default function AcHomeScadenze() {
   }
 
   return (
-    <div className="min-h-screen pb-28 px-4 pt-6" style={{ background: BACKGROUND, backgroundAttachment: "fixed" }}>
+    <div className="min-h-screen pb-28 px-4 pt-6" style={{ background: BACKGROUND }}>
       <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Scadenze</h1>
 
       <div className={`${GLASS} rounded-2xl p-4 mb-4`}>
