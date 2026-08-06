@@ -10,7 +10,7 @@ const GRUPPI = [
   { id: "scooter", label: "Scooter", icon: Bike },
 ];
 
-const BACKGROUND = "linear-gradient(160deg, #1B4F72 0%, #2E86AB 45%, #5FCFC0 100%)";
+const BACKGROUND = "linear-gradient(180deg, #0DAE8C 0%, #1A7FA3 55%, #5FA8DC 100%)";
 
 function giorniMancanti(dataScadenza) {
   const oggiZero = new Date();
