@@ -58,7 +58,8 @@ export default function AcHomeSpese() {
     if (!nuovaCategoria.trim()) return;
     const cat = await creaCategoria(gruppo, nuovaCategoria.trim());
     setNuovaCategoria("");
-    setCategorie((prev) => [...prev, cat]);
+    const cats = await getCategorie(gruppo);
+    setCategorie(cats);
     setCategoriaId(cat.id);
   }
 
