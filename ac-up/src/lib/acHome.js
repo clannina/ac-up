@@ -54,6 +54,17 @@ export async function eliminaSpesa(id) {
   if (error) throw error;
 }
 
+export async function aggiornaSpesa(id, { categoria_id, importo, data, nota, foto_url }) {
+  const { data: spesa, error } = await supabase
+    .from("ac_home_spese")
+    .update({ categoria_id, importo, data, nota, foto_url })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return spesa;
+}
+
 // --- Upload foto scontrino ---
 export async function caricaFotoScontrino(file) {
   const { data: userData } = await supabase.auth.getUser();
@@ -154,6 +165,17 @@ export async function eliminaRicorrente(id) {
   if (error) throw error;
 }
 
+export async function aggiornaRicorrente(id, { categoria_id, importo, descrizione, giorno_mese, fino_al }) {
+  const { data, error } = await supabase
+    .from("ac_home_ricorrenti")
+    .update({ categoria_id, importo, descrizione, giorno_mese: giorno_mese || 1, fino_al: fino_al || null })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 // --- Veicoli ---
 export async function getVeicoli() {
   const { data, error } = await supabase.from("ac_home_veicoli").select("*").order("nome");
@@ -175,6 +197,17 @@ export async function creaVeicolo({ nome, targa, tipo }) {
 export async function eliminaVeicolo(id) {
   const { error } = await supabase.from("ac_home_veicoli").delete().eq("id", id);
   if (error) throw error;
+}
+
+export async function aggiornaVeicolo(id, { nome, targa, tipo }) {
+  const { data, error } = await supabase
+    .from("ac_home_veicoli")
+    .update({ nome, targa, tipo })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 // --- Scadenze (es. revisione, assicurazione...) ---
@@ -208,6 +241,23 @@ export async function creaScadenza({ categoria_id, veicolo_id, titolo, data_scad
 export async function eliminaScadenza(id) {
   const { error } = await supabase.from("ac_home_scadenze").delete().eq("id", id);
   if (error) throw error;
+}
+
+export async function aggiornaScadenza(id, { categoria_id, veicolo_id, titolo, data_scadenza, ricorrenza }) {
+  const { data, error } = await supabase
+    .from("ac_home_scadenze")
+    .update({
+      categoria_id: categoria_id || null,
+      veicolo_id: veicolo_id || null,
+      titolo,
+      data_scadenza,
+      ricorrenza: ricorrenza || "una_tantum",
+    })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 // --- Notifiche push ---
@@ -297,6 +347,17 @@ export async function eliminaEntrata(id) {
   if (error) throw error;
 }
 
+export async function aggiornaEntrata(id, { importo, descrizione, data }) {
+  const { data: entrata, error } = await supabase
+    .from("ac_home_entrate")
+    .update({ importo, descrizione, data })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return entrata;
+}
+
 // --- Entrate ricorrenti (es. stipendio) ---
 export async function getEntrateRicorrenti() {
   const { data, error } = await supabase.from("ac_home_entrate_ricorrenti").select("*").order("created_at");
@@ -323,6 +384,17 @@ export async function toggleEntrataRicorrente(id, attiva) {
 export async function eliminaEntrataRicorrente(id) {
   const { error } = await supabase.from("ac_home_entrate_ricorrenti").delete().eq("id", id);
   if (error) throw error;
+}
+
+export async function aggiornaEntrataRicorrente(id, { importo, descrizione, giorno_mese }) {
+  const { data, error } = await supabase
+    .from("ac_home_entrate_ricorrenti")
+    .update({ importo, descrizione, giorno_mese: giorno_mese || 1 })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 // Genera automaticamente, per il mese/anno indicati, le entrate derivate dalle entrate ricorrenti attive
