@@ -38,11 +38,11 @@ export async function getSpese({ mese, anno, gruppo } = {}) {
   return gruppo ? data.filter((s) => s.ac_home_categorie?.gruppo === gruppo) : data;
 }
 
-export async function creaSpesa({ categoria_id, importo, data, nota, foto_url, ricorrente_id, persona }) {
+export async function creaSpesa({ categoria_id, importo, data, nota, foto_url, ricorrente_id, persona, condivisa }) {
   const { data: userData } = await supabase.auth.getUser();
   const { data: spesa, error } = await supabase
     .from("ac_home_spese")
-    .insert({ categoria_id, importo, data, nota, foto_url, ricorrente_id: ricorrente_id || null, persona: persona || null, user_id: userData.user.id })
+    .insert({ categoria_id, importo, data, nota, foto_url, ricorrente_id: ricorrente_id || null, persona: persona || null, condivisa: !!condivisa, user_id: userData.user.id })
     .select()
     .single();
   if (error) throw error;
@@ -54,10 +54,10 @@ export async function eliminaSpesa(id) {
   if (error) throw error;
 }
 
-export async function aggiornaSpesa(id, { categoria_id, importo, data, nota, foto_url, persona }) {
+export async function aggiornaSpesa(id, { categoria_id, importo, data, nota, foto_url, persona, condivisa }) {
   const { data: spesa, error } = await supabase
     .from("ac_home_spese")
-    .update({ categoria_id, importo, data, nota, foto_url, persona: persona || null })
+    .update({ categoria_id, importo, data, nota, foto_url, persona: persona || null, condivisa: !!condivisa })
     .eq("id", id)
     .select()
     .single();
