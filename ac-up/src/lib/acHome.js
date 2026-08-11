@@ -266,3 +266,97 @@ export async function generaSpeseRicorrentiDelMese(mese, anno) {
     });
   }
 }
+
+// --- Entrate ---
+export async function getEntrate(mese, anno) {
+  let query = supabase.from("ac_home_entrate").select("*").order("data", { ascending: false });
+  if (mese && anno) {
+    const inizio = `${anno}-${String(mese).padStart(2, "0")}-01`;
+    const fine = `${anno}-${String(mese).padStart(2, "0")}-31`;
+    query = query.gte("data", inizio).lte("data", fine);
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+}
+
+export async function creaEntrata({ importo, descrizione, data, entrata_ricorrente_id }) {
+  const { data: userData } = await supabase.auth.getUser();
+  const { data: entrata, error } = await supabase
+    .from("ac_home_entrate")
+    .insert({ importo, descrizione, data, entrata_ricorrente_id: entrata_ricorrente_id || null, user_id: userData.user.id })
+    .select()
+    .single();
+  if (error) throw error;
+  return entrata;
+}
+
+export async function eliminaEntrata(id) {
+  const { error } = await supabase.from("ac_home_entrate").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// --- Entrate ricorrenti (es. stipendio) ---
+export async function getEntrateRicorrenti() {
+  const { data, error } = await supabase.from("ac_home_entrate_ricorrenti").select("*").order("created_at");
+  if (error) throw error;
+  return data;
+}
+
+export async function creaEntrataRicorrente({ importo, descrizione, giorno_mese }) {
+  const { data: userData } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("ac_home_entrate_ricorrenti")
+    .insert({ importo, descrizione, giorno_mese: giorno_mese || 1, user_id: userData.user.id })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function toggleEntrataRicorrente(id, attiva) {
+  const { error } = await supabase.from("ac_home_entrate_ricorrenti").update({ attiva }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function eliminaEntrataRicorrente(id) {
+  const { error } = await supabase.from("ac_home_entrate_ricorrenti").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// Genera automaticamente, per il mese/anno indicati, le entrate derivate dalle entrate ricorrenti attive
+// che non sono ancora state create per quel mese (stessa logica delle spese ricorrenti).
+export async function generaEntrateRicorrentiDelMese(mese, anno) {
+  const ricorrenti = await getEntrateRicorrenti();
+  const attive = ricorrenti.filter((r) => r.attiva);
+  if (attive.length === 0) return;
+
+  const inizio = `${anno}-${String(mese).padStart(2, "0")}-01`;
+  const fine = `${anno}-${String(mese).padStart(2, "0")}-31`;
+
+  const { data: giaGenerate, error } = await supabase
+    .from("ac_home_entrate")
+    .select("entrata_ricorrente_id")
+    .gte("data", inizio)
+    .lte("data", fine)
+    .not("entrata_ricorrente_id", "is", null);
+  if (error) throw error;
+
+  const idGiaGenerati = new Set(giaGenerate.map((e) => e.entrata_ricorrente_id));
+  const daGenerare = attive.filter((r) => !idGiaGenerati.has(r.id));
+
+  const ultimoGiorno = new Date(anno, mese, 0).getDate();
+  const { data: userData } = await supabase.auth.getUser();
+
+  for (const r of daGenerare) {
+    const giorno = Math.min(r.giorno_mese, ultimoGiorno);
+    const data = `${anno}-${String(mese).padStart(2, "0")}-${String(giorno).padStart(2, "0")}`;
+    await supabase.from("ac_home_entrate").insert({
+      importo: r.importo,
+      data,
+      descrizione: r.descrizione,
+      entrata_ricorrente_id: r.id,
+      user_id: userData.user.id,
+    });
+  }
+}
