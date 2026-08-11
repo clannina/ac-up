@@ -65,9 +65,40 @@ export async function aggiornaSpesa(id, { categoria_id, importo, data, nota, fot
   return spesa;
 }
 
-// Toggle rapido dello stato di rimborso, senza dover riaprire tutto il form di modifica.
-export async function toggleRimborsoSpesa(id, rimborsato) {
-  const { error } = await supabase.from("ac_home_spese").update({ rimborsato }).eq("id", id);
+// Registra un rimborso, anche parziale, su una spesa condivisa.
+// "importoAggiunto" si somma a quanto gia' restituito in precedenza; una volta raggiunta
+// (o superata) la quota dovuta, la spesa risulta interamente rimborsata.
+export async function registraRimborso(id, importoAggiunto) {
+  const { data: attuale, error: errLettura } = await supabase
+    .from("ac_home_spese")
+    .select("importo, importo_rimborsato")
+    .eq("id", id)
+    .single();
+  if (errLettura) throw errLettura;
+
+  const quota = Number(attuale.importo) / 2;
+  const nuovoTotale = Math.min(quota, Number(attuale.importo_rimborsato || 0) + Number(importoAggiunto));
+
+  const { error } = await supabase
+    .from("ac_home_spese")
+    .update({ importo_rimborsato: nuovoTotale, rimborsato: nuovoTotale >= quota })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+// Segna l'intera quota come restituita in un colpo solo.
+export async function segnaRimborsoCompleto(id, importoSpesa) {
+  const quota = Number(importoSpesa) / 2;
+  const { error } = await supabase
+    .from("ac_home_spese")
+    .update({ importo_rimborsato: quota, rimborsato: true })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+// Azzera il rimborso registrato (utile se ci si e' sbagliati)
+export async function azzeraRimborso(id) {
+  const { error } = await supabase.from("ac_home_spese").update({ importo_rimborsato: 0, rimborsato: false }).eq("id", id);
   if (error) throw error;
 }
 
