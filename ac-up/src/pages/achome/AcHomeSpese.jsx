@@ -36,11 +36,16 @@ export default function AcHomeSpese() {
   const [condivisa, setCondivisa] = useState(false);
   const [rimborsato, setRimborsato] = useState(false);
   const [importoParziale, setImportoParziale] = useState({});
+  const [filtroStorico, setFiltroStorico] = useState(null);
+  const [storico, setStorico] = useState([]);
+  const [caricandoStorico, setCaricandoStorico] = useState(false);
 
   useEffect(() => {
     caricaCategorie();
     caricaSpese();
     caricaTotaleGenerale();
+    setFiltroStorico(null);
+    setStorico([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gruppo]);
 
@@ -120,6 +125,7 @@ export default function AcHomeSpese() {
       setCondivisa(false);
       caricaSpese();
       caricaTotaleGenerale();
+      if (filtroStorico) caricaStorico(filtroStorico);
     } catch (err) {
       setErrore("Errore nel salvataggio: " + err.message);
     } finally {
@@ -132,6 +138,7 @@ export default function AcHomeSpese() {
     if (editingId === id) annullaModifica();
     caricaSpese();
     caricaTotaleGenerale();
+    if (filtroStorico) caricaStorico(filtroStorico);
   }
 
   async function handleRegistraParziale(s) {
@@ -150,6 +157,47 @@ export default function AcHomeSpese() {
   async function handleAzzeraRimborso(s) {
     await azzeraRimborso(s.id);
     caricaSpese();
+  }
+
+  async function caricaStorico(periodo) {
+    setFiltroStorico(periodo);
+    setCaricandoStorico(true);
+    try {
+      const tutte = await getSpese({ gruppo }); // tutte le spese del gruppo, senza filtro di mese
+
+      const oggiData = new Date();
+      const primoGiornoMeseCorrente = new Date(oggiData.getFullYear(), oggiData.getMonth(), 1);
+      const fine = new Date(primoGiornoMeseCorrente.getTime() - 1); // ultimo giorno del mese precedente
+
+      let inizio;
+      if (periodo === "precedente") {
+        inizio = new Date(fine.getFullYear(), fine.getMonth(), 1);
+      } else if (periodo === "3mesi") {
+        inizio = new Date(fine.getFullYear(), fine.getMonth() - 2, 1);
+      } else {
+        inizio = new Date(fine.getFullYear(), fine.getMonth() - 11, 1);
+      }
+
+      const filtrate = tutte.filter((s) => {
+        const d = new Date(s.data);
+        return d >= inizio && d <= fine;
+      });
+
+      const gruppi = {};
+      filtrate.forEach((s) => {
+        const d = new Date(s.data);
+        const chiave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        if (!gruppi[chiave]) {
+          gruppi[chiave] = { chiave, label: d.toLocaleDateString("it-IT", { month: "long", year: "numeric" }), spese: [], totale: 0 };
+        }
+        gruppi[chiave].spese.push(s);
+        gruppi[chiave].totale += Number(s.importo);
+      });
+
+      setStorico(Object.values(gruppi).sort((a, b) => b.chiave.localeCompare(a.chiave)));
+    } finally {
+      setCaricandoStorico(false);
+    }
   }
 
   return (
@@ -411,6 +459,65 @@ export default function AcHomeSpese() {
             </div>
           );
         })}
+      </div>
+
+      {/* Storico */}
+      <h2 className="font-display text-sm mt-6 mb-2" style={{ color: "#fff" }}>Storico</h2>
+      <div className="flex gap-2 mb-4">
+        {[
+          { id: "precedente", label: "Mese precedente" },
+          { id: "3mesi", label: "3 mesi" },
+          { id: "anno", label: "Anno" },
+        ].map((f) => (
+          <button
+            key={f.id}
+            onClick={() => caricaStorico(f.id)}
+            className="flex-1 py-2 rounded-2xl text-xs font-medium"
+            style={filtroStorico === f.id ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {caricandoStorico && <p className="text-sm" style={{ color: "rgba(255,255,255,0.75)" }}>Carico lo storico...</p>}
+
+      {!caricandoStorico && filtroStorico && storico.length === 0 && (
+        <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessuna spesa trovata in questo periodo.</p>
+      )}
+
+      <div className="flex flex-col gap-4">
+        {storico.map((gruppoMese) => (
+          <div key={gruppoMese.chiave}>
+            <div className={`${GLASS} rounded-2xl px-4 py-2 flex justify-between items-center mb-2`}>
+              <p className="text-sm font-display capitalize" style={{ color: "#fff" }}>{gruppoMese.label}</p>
+              <p className="font-mono-num text-sm font-semibold" style={{ color: "#fff" }}>€ {gruppoMese.totale.toFixed(2)}</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              {gruppoMese.spese.map((s) => (
+                <div key={s.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`}>
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: "#fff" }}>
+                      {s.ac_home_categorie?.nome || "—"} {s.condivisa && <span className="text-xs opacity-70">· condivisa</span>}
+                    </p>
+                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
+                      {s.data} {s.persona ? `· ${s.persona}` : ""} {s.nota ? `· ${s.nota}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono-num font-semibold" style={{ color: "#fff" }}>€ {Number(s.importo).toFixed(2)}</p>
+                    <button onClick={() => handleModifica(s)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                      Modifica
+                    </button>
+                    <button onClick={() => handleElimina(s.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}>
+                      Elimina
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
