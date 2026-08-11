@@ -38,11 +38,11 @@ export async function getSpese({ mese, anno, gruppo } = {}) {
   return gruppo ? data.filter((s) => s.ac_home_categorie?.gruppo === gruppo) : data;
 }
 
-export async function creaSpesa({ categoria_id, importo, data, nota, foto_url, ricorrente_id, persona, condivisa }) {
+export async function creaSpesa({ categoria_id, importo, data, nota, foto_url, ricorrente_id, persona, condivisa, rimborsato }) {
   const { data: userData } = await supabase.auth.getUser();
   const { data: spesa, error } = await supabase
     .from("ac_home_spese")
-    .insert({ categoria_id, importo, data, nota, foto_url, ricorrente_id: ricorrente_id || null, persona: persona || null, condivisa: !!condivisa, user_id: userData.user.id })
+    .insert({ categoria_id, importo, data, nota, foto_url, ricorrente_id: ricorrente_id || null, persona: persona || null, condivisa: !!condivisa, rimborsato: !!rimborsato, user_id: userData.user.id })
     .select()
     .single();
   if (error) throw error;
@@ -54,15 +54,21 @@ export async function eliminaSpesa(id) {
   if (error) throw error;
 }
 
-export async function aggiornaSpesa(id, { categoria_id, importo, data, nota, foto_url, persona, condivisa }) {
+export async function aggiornaSpesa(id, { categoria_id, importo, data, nota, foto_url, persona, condivisa, rimborsato }) {
   const { data: spesa, error } = await supabase
     .from("ac_home_spese")
-    .update({ categoria_id, importo, data, nota, foto_url, persona: persona || null, condivisa: !!condivisa })
+    .update({ categoria_id, importo, data, nota, foto_url, persona: persona || null, condivisa: !!condivisa, rimborsato: !!rimborsato })
     .eq("id", id)
     .select()
     .single();
   if (error) throw error;
   return spesa;
+}
+
+// Toggle rapido dello stato di rimborso, senza dover riaprire tutto il form di modifica.
+export async function toggleRimborsoSpesa(id, rimborsato) {
+  const { error } = await supabase.from("ac_home_spese").update({ rimborsato }).eq("id", id);
+  if (error) throw error;
 }
 
 // --- Upload foto scontrino ---
