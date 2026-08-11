@@ -25,7 +25,7 @@ export default function AuthGate() {
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className={`min-h-screen ${isAcUp ? "pb-20" : ""}`}>
       <Outlet />
       {isAcUp && <NavBar />}
       {isAcHome && <AcHomeNavBar />}
