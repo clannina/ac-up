@@ -15,7 +15,7 @@ const BACKGROUND = "linear-gradient(180deg, #0DAE8C 0%, #1A7FA3 55%, #5FA8DC 100
 export default function AcHomeRicorrenti() {
   const [categorie, setCategorie] = useState([]);
   const [ricorrenti, setRicorrenti] = useState([]);
-  const [nuova, setNuova] = useState({ categoria_id: "", importo: "", descrizione: "", giorno_mese: "1" });
+  const [nuova, setNuova] = useState({ categoria_id: "", importo: "", descrizione: "", giorno_mese: "1", fino_al: "" });
 
   useEffect(() => {
     caricaCategorieTutte();
@@ -38,8 +38,9 @@ export default function AcHomeRicorrenti() {
       importo: parseFloat(nuova.importo),
       descrizione: nuova.descrizione,
       giorno_mese: parseInt(nuova.giorno_mese, 10) || 1,
+      fino_al: nuova.fino_al || null,
     });
-    setNuova({ categoria_id: "", importo: "", descrizione: "", giorno_mese: "1" });
+    setNuova({ categoria_id: "", importo: "", descrizione: "", giorno_mese: "1", fino_al: "" });
     caricaRicorrenti();
   }
 
@@ -106,6 +107,15 @@ export default function AcHomeRicorrenti() {
           style={{ background: "#fff" }}
         />
 
+        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Fino al (opzionale — es. fine di un finanziamento)</label>
+        <input
+          type="date"
+          value={nuova.fino_al}
+          onChange={(e) => setNuova((prev) => ({ ...prev, fino_al: e.target.value }))}
+          className="w-full rounded-xl px-3 py-2 text-sm mb-3"
+          style={{ background: "#fff" }}
+        />
+
         <button onClick={handleNuova} className="w-full py-2.5 rounded-xl font-display text-sm" style={{ background: T.forest, color: "#fff" }}>
           Aggiungi ricorrente
         </button>
@@ -118,7 +128,9 @@ export default function AcHomeRicorrenti() {
           <div key={r.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`} style={{ opacity: r.attiva ? 1 : 0.55 }}>
             <div>
               <p className="text-sm font-medium" style={{ color: "#fff" }}>{r.descrizione || r.ac_home_categorie?.nome}</p>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>{r.ac_home_categorie?.nome} · ogni {r.giorno_mese} del mese</p>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
+                {r.ac_home_categorie?.nome} · ogni {r.giorno_mese} del mese{r.fino_al ? ` · fino al ${r.fino_al}` : ""}
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <p className="font-mono-num font-semibold text-sm" style={{ color: "#fff" }}>€ {Number(r.importo).toFixed(2)}</p>

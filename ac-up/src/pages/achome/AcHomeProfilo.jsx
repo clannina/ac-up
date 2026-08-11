@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Car, Bike, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Car, Bike, Trash2, TrendingUp } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { getVeicoli, creaVeicolo, eliminaVeicolo } from "../../lib/acHome";
 
@@ -32,6 +33,16 @@ export default function AcHomeProfilo() {
   return (
     <div className="min-h-screen pb-28 px-4 pt-6" style={{ background: BACKGROUND }}>
       <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Profilo</h1>
+
+      <Link to="/ac-home/storico" className={`${GLASS} flex items-center gap-3 rounded-3xl p-4 mb-6`}>
+        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "#fff" }}>
+          <TrendingUp size={20} color={T.forest} />
+        </div>
+        <div>
+          <p className="font-display text-base" style={{ color: "#fff" }}>Storico e bilancio</p>
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>Andamento mensile, categorie e riepilogo annuale</p>
+        </div>
+      </Link>
 
       <h2 className="font-display text-sm mb-2" style={{ color: "#fff" }}>I tuoi mezzi</h2>
       <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.75)" }}>
