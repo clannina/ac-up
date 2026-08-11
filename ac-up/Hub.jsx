@@ -3,14 +3,14 @@ import { PAGE_GRADIENT, GLASS } from "./lib/theme";
 
 // Card di lancio per ogni app dell'hub.
 // accent: classe Tailwind per il bordo/testo distintivo dell'app (corallo per AC UP, es. sky per AC Home)
-function AppCard({ to, title, subtitle, emoji, accent }) {
+function AppCard({ to, title, subtitle, logo, accent }) {
   return (
     <Link
       to={to}
       className={`${GLASS} group relative flex flex-col justify-between p-6 rounded-3xl transition-transform duration-200 hover:-translate-y-1 active:scale-[0.98]`}
     >
       <div className="flex items-start justify-between">
-        <span className="text-4xl">{emoji}</span>
+        <img src={logo} alt={title} className="w-10 h-10" />
         <span
           className={`text-xs font-mono uppercase tracking-wider ${accent} opacity-70 group-hover:opacity-100 transition-opacity`}
         >
@@ -38,14 +38,14 @@ export default function Hub() {
           to="/ac-up"
           title="AC UP"
           subtitle="Nutrizione e piano pasti"
-          emoji="🥗"
+          logo="/icons/ac-up-logo-transparent.png"
           accent="text-orange-400" // corallo, coerente col design esistente
         />
         <AppCard
           to="/ac-home"
           title="AC Home"
           subtitle="Spese casa, auto e scooter"
-          emoji="🏠"
+          logo="/icons/ac-home-logo-transparent.png"
           accent="text-sky-400" // accento distintivo per AC Home
         />
       </div>
