@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts";
 import { TrendingUp } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { getSpese, getEntrate } from "../../lib/acHome";
@@ -35,9 +35,18 @@ export default function AcHomeStorico() {
   // Dati per il grafico: totale spese ed entrate per ciascuno dei 12 mesi dell'anno selezionato
   const datiGrafico = useMemo(() => {
     return MESI_LABEL.map((label, i) => {
-      const speseMese = speseAnno.filter((s) => new Date(s.data).getMonth() === i).reduce((t, s) => t + Number(s.importo), 0);
+      const speseDelMeseCorrente = speseAnno.filter((s) => new Date(s.data).getMonth() === i);
+      const speseAnna = speseDelMeseCorrente.filter((s) => s.persona === "Anna").reduce((t, s) => t + Number(s.importo), 0);
+      const speseVanna = speseDelMeseCorrente.filter((s) => s.persona === "Vanna").reduce((t, s) => t + Number(s.importo), 0);
+      const speseAltro = speseDelMeseCorrente.filter((s) => s.persona !== "Anna" && s.persona !== "Vanna").reduce((t, s) => t + Number(s.importo), 0);
       const entrateMese = entrateAnno.filter((e) => new Date(e.data).getMonth() === i).reduce((t, e) => t + Number(e.importo), 0);
-      return { mese: label, Spese: Math.round(speseMese), Entrate: Math.round(entrateMese) };
+      return {
+        mese: label,
+        Entrate: Math.round(entrateMese),
+        "Spese Anna": Math.round(speseAnna),
+        "Spese Vanna": Math.round(speseVanna),
+        "Altre spese": Math.round(speseAltro),
+      };
     });
   }, [speseAnno, entrateAnno]);
 
@@ -153,8 +162,13 @@ export default function AcHomeStorico() {
                     contentStyle={{ background: "rgba(20,50,60,0.9)", border: "none", borderRadius: 12, fontSize: 12 }}
                     labelStyle={{ color: "#fff" }}
                   />
+                  <Legend wrapperStyle={{ fontSize: 11, color: "#fff" }} />
                   <Bar dataKey="Entrate" fill="#8ee6c9" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Spese" fill="#e07a7a" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Spese Anna" fill="#e07a7a" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Spese Vanna" fill="#f2c14e" radius={[4, 4, 0, 0]} />
+                  {totalePerPersona["Non specificato"] > 0 && (
+                    <Bar dataKey="Altre spese" fill="rgba(255,255,255,0.5)" radius={[4, 4, 0, 0]} />
+                  )}
                 </BarChart>
               </ResponsiveContainer>
             </div>
