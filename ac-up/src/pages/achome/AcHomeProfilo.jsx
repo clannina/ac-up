@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Car, Bike, Trash2, TrendingUp } from "lucide-react";
+import { Car, Bike, Trash2, TrendingUp, Pencil } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
-import { getVeicoli, creaVeicolo, eliminaVeicolo } from "../../lib/acHome";
+import { getVeicoli, creaVeicolo, aggiornaVeicolo, eliminaVeicolo } from "../../lib/acHome";
 
 const BACKGROUND = "linear-gradient(180deg, #0DAE8C 0%, #1A7FA3 55%, #5FA8DC 100%)";
+const VUOTO = { nome: "", targa: "", tipo: "auto" };
 
 export default function AcHomeProfilo() {
   const [veicoli, setVeicoli] = useState([]);
-  const [nuovo, setNuovo] = useState({ nome: "", targa: "", tipo: "auto" });
+  const [nuovo, setNuovo] = useState(VUOTO);
+  const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
     caricaVeicoli();
@@ -18,15 +20,32 @@ export default function AcHomeProfilo() {
     setVeicoli(await getVeicoli());
   }
 
+  function handleModifica(v) {
+    setEditingId(v.id);
+    setNuovo({ nome: v.nome, targa: v.targa || "", tipo: v.tipo });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function annullaModifica() {
+    setEditingId(null);
+    setNuovo(VUOTO);
+  }
+
   async function handleNuovo() {
     if (!nuovo.nome.trim()) return;
-    await creaVeicolo(nuovo);
-    setNuovo({ nome: "", targa: "", tipo: "auto" });
+    if (editingId) {
+      await aggiornaVeicolo(editingId, nuovo);
+      setEditingId(null);
+    } else {
+      await creaVeicolo(nuovo);
+    }
+    setNuovo(VUOTO);
     caricaVeicoli();
   }
 
   async function handleElimina(id) {
     await eliminaVeicolo(id);
+    if (editingId === id) annullaModifica();
     caricaVeicoli();
   }
 
@@ -50,6 +69,15 @@ export default function AcHomeProfilo() {
       </p>
 
       <div className={`${GLASS} rounded-3xl p-4 mb-6`}>
+        {editingId && (
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-xs font-display" style={{ color: "#fff" }}>Stai modificando un veicolo</p>
+            <button onClick={annullaModifica} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+              Annulla
+            </button>
+          </div>
+        )}
+
         <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Nome</label>
         <input
           value={nuovo.nome}
@@ -87,7 +115,7 @@ export default function AcHomeProfilo() {
         </div>
 
         <button onClick={handleNuovo} className="w-full py-2.5 rounded-xl font-display text-sm" style={{ background: T.forest, color: "#fff" }}>
-          Aggiungi veicolo
+          {editingId ? "Aggiorna veicolo" : "Aggiungi veicolo"}
         </button>
       </div>
 
@@ -96,7 +124,7 @@ export default function AcHomeProfilo() {
         {veicoli.map((v) => {
           const Icon = v.tipo === "scooter" ? Bike : Car;
           return (
-            <div key={v.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`}>
+            <div key={v.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`} style={{ outline: editingId === v.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "#fff" }}>
                   <Icon size={18} color={T.forest} />
@@ -106,9 +134,14 @@ export default function AcHomeProfilo() {
                   {v.targa && <p className="text-xs font-mono-num" style={{ color: "rgba(255,255,255,0.65)" }}>{v.targa}</p>}
                 </div>
               </div>
-              <button onClick={() => handleElimina(v.id)} className="p-2 rounded-lg" style={{ background: "rgba(224,82,82,0.35)" }}>
-                <Trash2 size={16} color="#fff" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => handleModifica(v)} className="p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.2)" }}>
+                  <Pencil size={16} color="#fff" />
+                </button>
+                <button onClick={() => handleElimina(v.id)} className="p-2 rounded-lg" style={{ background: "rgba(224,82,82,0.35)" }}>
+                  <Trash2 size={16} color="#fff" />
+                </button>
+              </div>
             </div>
           );
         })}

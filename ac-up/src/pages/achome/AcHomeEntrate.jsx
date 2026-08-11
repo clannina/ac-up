@@ -4,9 +4,11 @@ import { T, GLASS } from "../../lib/theme";
 import {
   getEntrate,
   creaEntrata,
+  aggiornaEntrata,
   eliminaEntrata,
   getEntrateRicorrenti,
   creaEntrataRicorrente,
+  aggiornaEntrataRicorrente,
   toggleEntrataRicorrente,
   eliminaEntrataRicorrente,
   getSpese,
@@ -24,6 +26,8 @@ export default function AcHomeEntrate() {
   const [totaleSpeseMese, setTotaleSpeseMese] = useState(0);
   const [nuova, setNuova] = useState({ importo: "", descrizione: "", data: oggi.toISOString().slice(0, 10) });
   const [nuovaRicorrente, setNuovaRicorrente] = useState({ importo: "", descrizione: "", giorno_mese: "1" });
+  const [editingEntrataId, setEditingEntrataId] = useState(null);
+  const [editingRicorrenteId, setEditingRicorrenteId] = useState(null);
 
   useEffect(() => {
     caricaEntrate();
@@ -44,25 +48,59 @@ export default function AcHomeEntrate() {
     setTotaleSpeseMese(tutte.flat().reduce((tot, s) => tot + Number(s.importo), 0));
   }
 
+  function handleModificaEntrata(e) {
+    setEditingEntrataId(e.id);
+    setNuova({ importo: String(e.importo), descrizione: e.descrizione || "", data: e.data });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function annullaModificaEntrata() {
+    setEditingEntrataId(null);
+    setNuova({ importo: "", descrizione: "", data: oggi.toISOString().slice(0, 10) });
+  }
+
   async function handleNuova() {
     if (!nuova.importo || !nuova.data) return;
-    await creaEntrata({ importo: parseFloat(nuova.importo), descrizione: nuova.descrizione, data: nuova.data });
+    if (editingEntrataId) {
+      await aggiornaEntrata(editingEntrataId, { importo: parseFloat(nuova.importo), descrizione: nuova.descrizione, data: nuova.data });
+      setEditingEntrataId(null);
+    } else {
+      await creaEntrata({ importo: parseFloat(nuova.importo), descrizione: nuova.descrizione, data: nuova.data });
+    }
     setNuova({ importo: "", descrizione: "", data: oggi.toISOString().slice(0, 10) });
     caricaEntrate();
   }
 
   async function handleElimina(id) {
     await eliminaEntrata(id);
+    if (editingEntrataId === id) annullaModificaEntrata();
     caricaEntrate();
+  }
+
+  function handleModificaRicorrente(r) {
+    setEditingRicorrenteId(r.id);
+    setNuovaRicorrente({ importo: String(r.importo), descrizione: r.descrizione || "", giorno_mese: String(r.giorno_mese) });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function annullaModificaRicorrente() {
+    setEditingRicorrenteId(null);
+    setNuovaRicorrente({ importo: "", descrizione: "", giorno_mese: "1" });
   }
 
   async function handleNuovaRicorrente() {
     if (!nuovaRicorrente.importo) return;
-    await creaEntrataRicorrente({
+    const payload = {
       importo: parseFloat(nuovaRicorrente.importo),
       descrizione: nuovaRicorrente.descrizione,
       giorno_mese: parseInt(nuovaRicorrente.giorno_mese, 10) || 1,
-    });
+    };
+    if (editingRicorrenteId) {
+      await aggiornaEntrataRicorrente(editingRicorrenteId, payload);
+      setEditingRicorrenteId(null);
+    } else {
+      await creaEntrataRicorrente(payload);
+    }
     setNuovaRicorrente({ importo: "", descrizione: "", giorno_mese: "1" });
     caricaRicorrenti();
   }
@@ -74,6 +112,7 @@ export default function AcHomeEntrate() {
 
   async function handleEliminaRicorrente(id) {
     await eliminaEntrataRicorrente(id);
+    if (editingRicorrenteId === id) annullaModificaRicorrente();
     caricaRicorrenti();
   }
 
@@ -99,8 +138,17 @@ export default function AcHomeEntrate() {
         </div>
       </div>
 
-      {/* Nuova entrata */}
+      {/* Nuova entrata / modifica */}
       <div className={`${GLASS} rounded-3xl p-4 mb-6`}>
+        {editingEntrataId && (
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-xs font-display" style={{ color: "#fff" }}>Stai modificando un'entrata</p>
+            <button onClick={annullaModificaEntrata} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+              Annulla
+            </button>
+          </div>
+        )}
+
         <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Descrizione</label>
         <input
           value={nuova.descrizione}
@@ -131,7 +179,7 @@ export default function AcHomeEntrate() {
         />
 
         <button onClick={handleNuova} className="w-full py-2.5 rounded-xl font-display text-sm" style={{ background: T.forest, color: "#fff" }}>
-          Aggiungi entrata
+          {editingEntrataId ? "Aggiorna entrata" : "Aggiungi entrata"}
         </button>
       </div>
 
@@ -139,7 +187,7 @@ export default function AcHomeEntrate() {
       <div className="flex flex-col gap-2 mb-6">
         {entrate.length === 0 && <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessuna entrata registrata.</p>}
         {entrate.map((e) => (
-          <div key={e.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`}>
+          <div key={e.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`} style={{ outline: editingEntrataId === e.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
             <div>
               <p className="text-sm font-medium" style={{ color: "#fff" }}>
                 {e.descrizione || "Entrata"} {e.entrata_ricorrente_id && <span className="text-xs opacity-70">· ricorrente</span>}
@@ -148,6 +196,9 @@ export default function AcHomeEntrate() {
             </div>
             <div className="flex items-center gap-2">
               <p className="font-mono-num font-semibold" style={{ color: "#fff" }}>€ {Number(e.importo).toFixed(2)}</p>
+              <button onClick={() => handleModificaEntrata(e)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                Modifica
+              </button>
               <button onClick={() => handleElimina(e.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}>
                 Elimina
               </button>
@@ -161,6 +212,15 @@ export default function AcHomeEntrate() {
         Le entrate ricorrenti (es. stipendio) vengono aggiunte automaticamente ogni mese, al giorno indicato, appena apri l'app.
       </p>
       <div className={`${GLASS} rounded-3xl p-4 mb-6`}>
+        {editingRicorrenteId && (
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-xs font-display" style={{ color: "#fff" }}>Stai modificando un'entrata ricorrente</p>
+            <button onClick={annullaModificaRicorrente} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+              Annulla
+            </button>
+          </div>
+        )}
+
         <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Descrizione</label>
         <input
           value={nuovaRicorrente.descrizione}
@@ -193,7 +253,7 @@ export default function AcHomeEntrate() {
         />
 
         <button onClick={handleNuovaRicorrente} className="w-full py-2.5 rounded-xl font-display text-sm" style={{ background: T.forest, color: "#fff" }}>
-          Aggiungi entrata ricorrente
+          {editingRicorrenteId ? "Aggiorna entrata ricorrente" : "Aggiungi entrata ricorrente"}
         </button>
       </div>
 
@@ -201,13 +261,16 @@ export default function AcHomeEntrate() {
       <div className="flex flex-col gap-2">
         {ricorrenti.length === 0 && <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessuna entrata ricorrente impostata.</p>}
         {ricorrenti.map((r) => (
-          <div key={r.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`} style={{ opacity: r.attiva ? 1 : 0.55 }}>
+          <div key={r.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`} style={{ opacity: r.attiva ? 1 : 0.55, outline: editingRicorrenteId === r.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
             <div>
               <p className="text-sm font-medium" style={{ color: "#fff" }}>{r.descrizione || "Entrata"}</p>
               <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>ogni {r.giorno_mese} del mese</p>
             </div>
             <div className="flex items-center gap-2">
               <p className="font-mono-num font-semibold text-sm" style={{ color: "#fff" }}>€ {Number(r.importo).toFixed(2)}</p>
+              <button onClick={() => handleModificaRicorrente(r)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                Modifica
+              </button>
               <button onClick={() => handleToggleRicorrente(r)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
                 {r.attiva ? "Pausa" : "Riattiva"}
               </button>

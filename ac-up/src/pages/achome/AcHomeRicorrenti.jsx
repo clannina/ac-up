@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Home as HomeIcon, Car, Bike, HeartPulse } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
-import { getCategorie, creaRicorrente, getRicorrenti, toggleRicorrente, eliminaRicorrente } from "../../lib/acHome";
+import { getCategorie, creaRicorrente, aggiornaRicorrente, getRicorrenti, toggleRicorrente, eliminaRicorrente } from "../../lib/acHome";
 
 const GRUPPI = [
   { id: "casa", label: "Casa", icon: HomeIcon },
@@ -11,11 +11,13 @@ const GRUPPI = [
 ];
 
 const BACKGROUND = "linear-gradient(180deg, #0DAE8C 0%, #1A7FA3 55%, #5FA8DC 100%)";
+const VUOTO = { categoria_id: "", importo: "", descrizione: "", giorno_mese: "1", fino_al: "" };
 
 export default function AcHomeRicorrenti() {
   const [categorie, setCategorie] = useState([]);
   const [ricorrenti, setRicorrenti] = useState([]);
-  const [nuova, setNuova] = useState({ categoria_id: "", importo: "", descrizione: "", giorno_mese: "1", fino_al: "" });
+  const [nuova, setNuova] = useState(VUOTO);
+  const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
     caricaCategorieTutte();
@@ -31,16 +33,39 @@ export default function AcHomeRicorrenti() {
     setRicorrenti(await getRicorrenti());
   }
 
+  function handleModifica(r) {
+    setEditingId(r.id);
+    setNuova({
+      categoria_id: r.categoria_id || "",
+      importo: String(r.importo),
+      descrizione: r.descrizione || "",
+      giorno_mese: String(r.giorno_mese),
+      fino_al: r.fino_al || "",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function annullaModifica() {
+    setEditingId(null);
+    setNuova(VUOTO);
+  }
+
   async function handleNuova() {
     if (!nuova.categoria_id || !nuova.importo) return;
-    await creaRicorrente({
+    const payload = {
       categoria_id: nuova.categoria_id,
       importo: parseFloat(nuova.importo),
       descrizione: nuova.descrizione,
       giorno_mese: parseInt(nuova.giorno_mese, 10) || 1,
       fino_al: nuova.fino_al || null,
-    });
-    setNuova({ categoria_id: "", importo: "", descrizione: "", giorno_mese: "1", fino_al: "" });
+    };
+    if (editingId) {
+      await aggiornaRicorrente(editingId, payload);
+      setEditingId(null);
+    } else {
+      await creaRicorrente(payload);
+    }
+    setNuova(VUOTO);
     caricaRicorrenti();
   }
 
@@ -51,6 +76,7 @@ export default function AcHomeRicorrenti() {
 
   async function handleElimina(id) {
     await eliminaRicorrente(id);
+    if (editingId === id) annullaModifica();
     caricaRicorrenti();
   }
 
@@ -63,6 +89,15 @@ export default function AcHomeRicorrenti() {
       </p>
 
       <div className={`${GLASS} rounded-3xl p-4 mb-6`}>
+        {editingId && (
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-xs font-display" style={{ color: "#fff" }}>Stai modificando una ricorrente</p>
+            <button onClick={annullaModifica} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+              Annulla
+            </button>
+          </div>
+        )}
+
         <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Categoria</label>
         <select
           value={nuova.categoria_id}
@@ -117,7 +152,7 @@ export default function AcHomeRicorrenti() {
         />
 
         <button onClick={handleNuova} className="w-full py-2.5 rounded-xl font-display text-sm" style={{ background: T.forest, color: "#fff" }}>
-          Aggiungi ricorrente
+          {editingId ? "Aggiorna ricorrente" : "Aggiungi ricorrente"}
         </button>
       </div>
 
@@ -125,7 +160,7 @@ export default function AcHomeRicorrenti() {
       <div className="flex flex-col gap-2">
         {ricorrenti.length === 0 && <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessuna spesa ricorrente impostata.</p>}
         {ricorrenti.map((r) => (
-          <div key={r.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`} style={{ opacity: r.attiva ? 1 : 0.55 }}>
+          <div key={r.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`} style={{ opacity: r.attiva ? 1 : 0.55, outline: editingId === r.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
             <div>
               <p className="text-sm font-medium" style={{ color: "#fff" }}>{r.descrizione || r.ac_home_categorie?.nome}</p>
               <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
@@ -134,6 +169,9 @@ export default function AcHomeRicorrenti() {
             </div>
             <div className="flex items-center gap-2">
               <p className="font-mono-num font-semibold text-sm" style={{ color: "#fff" }}>€ {Number(r.importo).toFixed(2)}</p>
+              <button onClick={() => handleModifica(r)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                Modifica
+              </button>
               <button onClick={() => handleToggle(r)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
                 {r.attiva ? "Pausa" : "Riattiva"}
               </button>

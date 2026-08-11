@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Home as HomeIcon, Car, Bike, HeartPulse } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
-import { getCategorie, getScadenze, creaScadenza, eliminaScadenza, getVeicoli } from "../../lib/acHome";
+import { getCategorie, getScadenze, creaScadenza, aggiornaScadenza, eliminaScadenza, getVeicoli } from "../../lib/acHome";
 import { attivaNotifichePush, notifichePushAttive } from "../../lib/push";
 
 const GRUPPI = [
@@ -12,6 +12,7 @@ const GRUPPI = [
 ];
 
 const BACKGROUND = "linear-gradient(180deg, #0DAE8C 0%, #1A7FA3 55%, #5FA8DC 100%)";
+const VUOTO = { categoria_id: "", veicolo_id: "", titolo: "", data_scadenza: "", ricorrenza: "una_tantum" };
 
 function giorniMancanti(dataScadenza) {
   const oggiZero = new Date();
@@ -25,7 +26,8 @@ export default function AcHomeScadenze() {
   const [categorie, setCategorie] = useState([]);
   const [veicoli, setVeicoli] = useState([]);
   const [scadenze, setScadenze] = useState([]);
-  const [nuova, setNuova] = useState({ categoria_id: "", veicolo_id: "", titolo: "", data_scadenza: "", ricorrenza: "una_tantum" });
+  const [nuova, setNuova] = useState(VUOTO);
+  const [editingId, setEditingId] = useState(null);
   const [pushAttive, setPushAttive] = useState(false);
   const [pushErrore, setPushErrore] = useState(null);
 
@@ -49,15 +51,38 @@ export default function AcHomeScadenze() {
     setScadenze(await getScadenze());
   }
 
+  function handleModifica(s) {
+    setEditingId(s.id);
+    setNuova({
+      categoria_id: s.categoria_id || "",
+      veicolo_id: s.veicolo_id || "",
+      titolo: s.titolo,
+      data_scadenza: s.data_scadenza,
+      ricorrenza: s.ricorrenza || "una_tantum",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function annullaModifica() {
+    setEditingId(null);
+    setNuova(VUOTO);
+  }
+
   async function handleNuova() {
     if (!nuova.titolo.trim() || !nuova.data_scadenza) return;
-    await creaScadenza(nuova);
-    setNuova({ categoria_id: "", veicolo_id: "", titolo: "", data_scadenza: "", ricorrenza: "una_tantum" });
+    if (editingId) {
+      await aggiornaScadenza(editingId, nuova);
+      setEditingId(null);
+    } else {
+      await creaScadenza(nuova);
+    }
+    setNuova(VUOTO);
     caricaScadenze();
   }
 
   async function handleElimina(id) {
     await eliminaScadenza(id);
+    if (editingId === id) annullaModifica();
     caricaScadenze();
   }
 
@@ -91,6 +116,15 @@ export default function AcHomeScadenze() {
       </div>
 
       <div className={`${GLASS} rounded-3xl p-4 mb-6`}>
+        {editingId && (
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-xs font-display" style={{ color: "#fff" }}>Stai modificando una scadenza</p>
+            <button onClick={annullaModifica} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+              Annulla
+            </button>
+          </div>
+        )}
+
         <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Titolo</label>
         <input
           value={nuova.titolo}
@@ -148,7 +182,7 @@ export default function AcHomeScadenze() {
         </select>
 
         <button onClick={handleNuova} className="w-full py-2.5 rounded-xl font-display text-sm" style={{ background: T.forest, color: "#fff" }}>
-          Aggiungi scadenza
+          {editingId ? "Aggiorna scadenza" : "Aggiungi scadenza"}
         </button>
       </div>
 
@@ -158,7 +192,7 @@ export default function AcHomeScadenze() {
         {scadenze.map((s) => {
           const giorni = giorniMancanti(s.data_scadenza);
           return (
-            <div key={s.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`}>
+            <div key={s.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`} style={{ outline: editingId === s.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
               <div>
                 <p className="text-sm font-medium" style={{ color: "#fff" }}>{s.titolo}</p>
                 <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
@@ -167,9 +201,14 @@ export default function AcHomeScadenze() {
                   {s.ricorrenza !== "una_tantum" && ` · si ripete ${s.ricorrenza === "annuale" ? "ogni anno" : "ogni 2 anni"}`}
                 </p>
               </div>
-              <button onClick={() => handleElimina(s.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}>
-                Elimina
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => handleModifica(s)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                  Modifica
+                </button>
+                <button onClick={() => handleElimina(s.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}>
+                  Elimina
+                </button>
+              </div>
             </div>
           );
         })}

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Home as HomeIcon, Car, Bike, HeartPulse } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
-import { getCategorie, creaCategoria, getSpese, creaSpesa, eliminaSpesa, caricaFotoScontrino, getTotaleGenerale } from "../../lib/acHome";
+import { getCategorie, creaCategoria, getSpese, creaSpesa, aggiornaSpesa, eliminaSpesa, caricaFotoScontrino, getTotaleGenerale } from "../../lib/acHome";
 
 const GRUPPI = [
   { id: "casa", label: "Casa", icon: HomeIcon },
@@ -30,6 +30,7 @@ export default function AcHomeSpese() {
   const [totaleGenerale, setTotaleGenerale] = useState(0);
   const [salvando, setSalvando] = useState(false);
   const [errore, setErrore] = useState(null);
+  const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
     caricaCategorie();
@@ -41,7 +42,7 @@ export default function AcHomeSpese() {
   async function caricaCategorie() {
     const cats = await getCategorie(gruppo);
     setCategorie(cats);
-    setCategoriaId(cats[0]?.id || "");
+    if (!editingId) setCategoriaId(cats[0]?.id || "");
   }
 
   async function caricaSpese() {
@@ -63,6 +64,26 @@ export default function AcHomeSpese() {
     setCategoriaId(cat.id);
   }
 
+  function handleModifica(s) {
+    setEditingId(s.id);
+    setCategoriaId(s.categoria_id);
+    setImporto(String(s.importo));
+    setData(s.data);
+    setNota(s.nota || "");
+    setFoto(null);
+    setErrore(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function annullaModifica() {
+    setEditingId(null);
+    setImporto("");
+    setNota("");
+    setFoto(null);
+    setData(oggi.toISOString().slice(0, 10));
+    setErrore(null);
+  }
+
   async function handleSalva(e) {
     e.preventDefault();
     setErrore(null);
@@ -74,7 +95,14 @@ export default function AcHomeSpese() {
     try {
       let foto_url = null;
       if (foto) foto_url = await caricaFotoScontrino(foto);
-      await creaSpesa({ categoria_id: categoriaId, importo: parseFloat(importo), data, nota, foto_url });
+
+      if (editingId) {
+        await aggiornaSpesa(editingId, { categoria_id: categoriaId, importo: parseFloat(importo), data, nota, foto_url });
+        setEditingId(null);
+      } else {
+        await creaSpesa({ categoria_id: categoriaId, importo: parseFloat(importo), data, nota, foto_url });
+      }
+
       setImporto("");
       setNota("");
       setFoto(null);
@@ -89,6 +117,7 @@ export default function AcHomeSpese() {
 
   async function handleElimina(id) {
     await eliminaSpesa(id);
+    if (editingId === id) annullaModifica();
     caricaSpese();
     caricaTotaleGenerale();
   }
@@ -115,6 +144,15 @@ export default function AcHomeSpese() {
       </div>
 
       <form onSubmit={handleSalva} className={`${GLASS} rounded-3xl p-4 mb-5`}>
+        {editingId && (
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-xs font-display" style={{ color: "#fff" }}>Stai modificando una spesa</p>
+            <button type="button" onClick={annullaModifica} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+              Annulla
+            </button>
+          </div>
+        )}
+
         <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Sottocategoria</label>
         <div className="flex gap-2 mb-3">
           <select
@@ -189,7 +227,7 @@ export default function AcHomeSpese() {
           className="w-full py-2.5 rounded-xl font-display text-sm"
           style={{ background: T.forest, color: "#fff", opacity: salvando ? 0.6 : 1 }}
         >
-          {salvando ? "Salvo..." : "Salva spesa"}
+          {salvando ? "Salvo..." : editingId ? "Aggiorna spesa" : "Salva spesa"}
         </button>
       </form>
 
@@ -210,7 +248,7 @@ export default function AcHomeSpese() {
       <div className="flex flex-col gap-2">
         {spese.length === 0 && <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessuna spesa registrata.</p>}
         {spese.map((s) => (
-          <div key={s.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`}>
+          <div key={s.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`} style={{ outline: editingId === s.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
             <div>
               <p className="text-sm font-medium" style={{ color: "#fff" }}>
                 {s.ac_home_categorie?.nome || "—"} {s.ricorrente_id && <span className="text-xs opacity-70">· ricorrente</span>}
@@ -219,6 +257,9 @@ export default function AcHomeSpese() {
             </div>
             <div className="flex items-center gap-2">
               <p className="font-mono-num font-semibold" style={{ color: "#fff" }}>€ {Number(s.importo).toFixed(2)}</p>
+              <button onClick={() => handleModifica(s)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                Modifica
+              </button>
               <button onClick={() => handleElimina(s.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}>
                 Elimina
               </button>
