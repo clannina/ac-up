@@ -33,6 +33,7 @@ export default function AcHomeSpese() {
   const [errore, setErrore] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [persona, setPersona] = useState(getPersonaPredefinita());
+  const [condivisa, setCondivisa] = useState(false);
 
   useEffect(() => {
     caricaCategorie();
@@ -74,6 +75,7 @@ export default function AcHomeSpese() {
     setNota(s.nota || "");
     setFoto(null);
     setPersona(s.persona || getPersonaPredefinita());
+    setCondivisa(!!s.condivisa);
     setErrore(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -85,6 +87,7 @@ export default function AcHomeSpese() {
     setFoto(null);
     setData(oggi.toISOString().slice(0, 10));
     setPersona(getPersonaPredefinita());
+    setCondivisa(false);
     setErrore(null);
   }
 
@@ -101,15 +104,16 @@ export default function AcHomeSpese() {
       if (foto) foto_url = await caricaFotoScontrino(foto);
 
       if (editingId) {
-        await aggiornaSpesa(editingId, { categoria_id: categoriaId, importo: parseFloat(importo), data, nota, foto_url, persona });
+        await aggiornaSpesa(editingId, { categoria_id: categoriaId, importo: parseFloat(importo), data, nota, foto_url, persona, condivisa });
         setEditingId(null);
       } else {
-        await creaSpesa({ categoria_id: categoriaId, importo: parseFloat(importo), data, nota, foto_url, persona });
+        await creaSpesa({ categoria_id: categoriaId, importo: parseFloat(importo), data, nota, foto_url, persona, condivisa });
       }
 
       setImporto("");
       setNota("");
       setFoto(null);
+      setCondivisa(false);
       caricaSpese();
       caricaTotaleGenerale();
     } catch (err) {
@@ -225,6 +229,24 @@ export default function AcHomeSpese() {
 
         <PersonaSelector value={persona} onChange={setPersona} />
 
+        <button
+          type="button"
+          onClick={() => setCondivisa((prev) => !prev)}
+          className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm mb-3"
+          style={{ background: condivisa ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.2)", color: condivisa ? T.forest : "#fff" }}
+        >
+          <span>Spesa condivisa con l'altra persona (50/50)</span>
+          <span
+            className="w-9 h-5 rounded-full relative flex-shrink-0 ml-2"
+            style={{ background: condivisa ? T.forest : "rgba(255,255,255,0.4)" }}
+          >
+            <span
+              className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all"
+              style={{ left: condivisa ? "18px" : "2px" }}
+            />
+          </span>
+        </button>
+
         {errore && <p className="text-xs text-red-100 mb-2">{errore}</p>}
 
         <button
@@ -250,6 +272,23 @@ export default function AcHomeSpese() {
         </div>
       </div>
 
+      {spese.some((s) => s.condivisa) && (
+        <div className={`${GLASS} rounded-2xl p-4 mb-4 flex justify-between`}>
+          <div>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>Spese condivise questo mese</p>
+            <p className="font-mono-num text-lg" style={{ color: "#fff" }}>
+              € {spese.filter((s) => s.condivisa).reduce((tot, s) => tot + Number(s.importo), 0).toFixed(2)}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>Quota a testa (50%)</p>
+            <p className="font-mono-num text-lg" style={{ color: "#fff" }}>
+              € {(spese.filter((s) => s.condivisa).reduce((tot, s) => tot + Number(s.importo), 0) / 2).toFixed(2)}
+            </p>
+          </div>
+        </div>
+      )}
+
       <h2 className="font-display text-sm mb-2" style={{ color: "#fff" }}>Spese di questo mese</h2>
       <div className="flex flex-col gap-2">
         {spese.length === 0 && <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessuna spesa registrata.</p>}
@@ -257,9 +296,12 @@ export default function AcHomeSpese() {
           <div key={s.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`} style={{ outline: editingId === s.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
             <div>
               <p className="text-sm font-medium" style={{ color: "#fff" }}>
-                {s.ac_home_categorie?.nome || "—"} {s.ricorrente_id && <span className="text-xs opacity-70">· ricorrente</span>}
+                {s.ac_home_categorie?.nome || "—"} {s.ricorrente_id && <span className="text-xs opacity-70">· ricorrente</span>} {s.condivisa && <span className="text-xs opacity-70">· condivisa</span>}
               </p>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>{s.data} {s.persona ? `· ${s.persona}` : ""} {s.nota ? `· ${s.nota}` : ""}</p>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
+                {s.data} {s.persona ? `· ${s.persona}` : ""} {s.nota ? `· ${s.nota}` : ""}
+                {s.condivisa && ` · quota € ${(Number(s.importo) / 2).toFixed(2)}`}
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <p className="font-mono-num font-semibold" style={{ color: "#fff" }}>€ {Number(s.importo).toFixed(2)}</p>
