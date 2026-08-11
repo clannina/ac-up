@@ -48,7 +48,9 @@ export default function AcHomeEntrate() {
 
   async function caricaTotaleSpese() {
     const tutte = await Promise.all(GRUPPI.map((g) => getSpese({ mese: MESE_CORRENTE, anno: ANNO_CORRENTE, gruppo: g })));
-    setTotaleSpeseMese(tutte.flat().reduce((tot, s) => tot + Number(s.importo), 0));
+    // Il residuo e' quello di Anna: le spese di Vanna non incidono.
+    const soloAnna = tutte.flat().filter((s) => s.persona !== "Vanna");
+    setTotaleSpeseMese(soloAnna.reduce((tot, s) => tot + Number(s.importo), 0));
   }
 
   function handleModificaEntrata(e) {
@@ -135,7 +137,7 @@ export default function AcHomeEntrate() {
       <div className={`${GLASS} rounded-3xl p-4 mb-5`}>
         <div className="flex items-center gap-2 mb-2">
           <Wallet size={18} color="#fff" />
-          <p className="font-display text-sm" style={{ color: "#fff" }}>Residuo di questo mese</p>
+          <p className="font-display text-sm" style={{ color: "#fff" }}>Residuo di Anna questo mese</p>
         </div>
         <p className="font-mono-num text-3xl" style={{ color: residuo >= 0 ? "#fff" : "#ffd0d0" }}>
           € {residuo.toFixed(2)}

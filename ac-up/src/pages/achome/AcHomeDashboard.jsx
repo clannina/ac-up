@@ -52,7 +52,9 @@ export default function AcHomeDashboard() {
     const entrate = await getEntrate(MESE_CORRENTE, ANNO_CORRENTE);
     const totaleEntrate = entrate.reduce((tot, e) => tot + Number(e.importo), 0);
     const tutteLeSpese = await Promise.all(GRUPPI.map((g) => getSpese({ mese: MESE_CORRENTE, anno: ANNO_CORRENTE, gruppo: g.id })));
-    const totaleSpese = tutteLeSpese.flat().reduce((tot, s) => tot + Number(s.importo), 0);
+    // Il residuo e' quello di Anna: le spese di Vanna non incidono.
+    const soloAnna = tutteLeSpese.flat().filter((s) => s.persona !== "Vanna");
+    const totaleSpese = soloAnna.reduce((tot, s) => tot + Number(s.importo), 0);
     setResiduo(totaleEntrate - totaleSpese);
   }
 
@@ -85,7 +87,7 @@ export default function AcHomeDashboard() {
       <Link to="/ac-home/entrate" className={`${GLASS} block rounded-3xl p-4 mb-5`}>
         <div className="flex items-center gap-2 mb-1">
           <Wallet size={18} color="#fff" />
-          <p className="font-display text-sm" style={{ color: "#fff" }}>Residuo di questo mese</p>
+          <p className="font-display text-sm" style={{ color: "#fff" }}>Residuo di Anna questo mese</p>
         </div>
         <p className="font-mono-num text-3xl" style={{ color: residuo >= 0 ? "#fff" : "#ffd0d0" }}>
           € {residuo.toFixed(2)}
