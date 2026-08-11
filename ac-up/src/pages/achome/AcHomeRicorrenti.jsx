@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Home as HomeIcon, Car, Bike, HeartPulse } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { getCategorie, creaRicorrente, aggiornaRicorrente, getRicorrenti, toggleRicorrente, eliminaRicorrente } from "../../lib/acHome";
+import PersonaSelector, { getPersonaPredefinita } from "../../components/PersonaSelector.jsx";
 
 const GRUPPI = [
   { id: "casa", label: "Casa", icon: HomeIcon },
@@ -18,6 +19,7 @@ export default function AcHomeRicorrenti() {
   const [ricorrenti, setRicorrenti] = useState([]);
   const [nuova, setNuova] = useState(VUOTO);
   const [editingId, setEditingId] = useState(null);
+  const [persona, setPersona] = useState(getPersonaPredefinita());
 
   useEffect(() => {
     caricaCategorieTutte();
@@ -42,12 +44,14 @@ export default function AcHomeRicorrenti() {
       giorno_mese: String(r.giorno_mese),
       fino_al: r.fino_al || "",
     });
+    setPersona(r.persona || getPersonaPredefinita());
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function annullaModifica() {
     setEditingId(null);
     setNuova(VUOTO);
+    setPersona(getPersonaPredefinita());
   }
 
   async function handleNuova() {
@@ -58,6 +62,7 @@ export default function AcHomeRicorrenti() {
       descrizione: nuova.descrizione,
       giorno_mese: parseInt(nuova.giorno_mese, 10) || 1,
       fino_al: nuova.fino_al || null,
+      persona,
     };
     if (editingId) {
       await aggiornaRicorrente(editingId, payload);
@@ -151,6 +156,8 @@ export default function AcHomeRicorrenti() {
           style={{ background: "#fff" }}
         />
 
+        <PersonaSelector value={persona} onChange={setPersona} />
+
         <button onClick={handleNuova} className="w-full py-2.5 rounded-xl font-display text-sm" style={{ background: T.forest, color: "#fff" }}>
           {editingId ? "Aggiorna ricorrente" : "Aggiungi ricorrente"}
         </button>
@@ -164,7 +171,7 @@ export default function AcHomeRicorrenti() {
             <div>
               <p className="text-sm font-medium" style={{ color: "#fff" }}>{r.descrizione || r.ac_home_categorie?.nome}</p>
               <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
-                {r.ac_home_categorie?.nome} · ogni {r.giorno_mese} del mese{r.fino_al ? ` · fino al ${r.fino_al}` : ""}
+                {r.ac_home_categorie?.nome} · ogni {r.giorno_mese} del mese{r.persona ? ` · ${r.persona}` : ""} · {r.fino_al ? `fino al ${r.fino_al}` : "senza scadenza"}
               </p>
             </div>
             <div className="flex items-center gap-2">

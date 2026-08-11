@@ -3,6 +3,7 @@ import { Home as HomeIcon, Car, Bike, HeartPulse } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { getCategorie, getScadenze, creaScadenza, aggiornaScadenza, eliminaScadenza, getVeicoli } from "../../lib/acHome";
 import { attivaNotifichePush, notifichePushAttive } from "../../lib/push";
+import PersonaSelector, { getPersonaPredefinita } from "../../components/PersonaSelector.jsx";
 
 const GRUPPI = [
   { id: "casa", label: "Casa", icon: HomeIcon },
@@ -28,6 +29,7 @@ export default function AcHomeScadenze() {
   const [scadenze, setScadenze] = useState([]);
   const [nuova, setNuova] = useState(VUOTO);
   const [editingId, setEditingId] = useState(null);
+  const [persona, setPersona] = useState(getPersonaPredefinita());
   const [pushAttive, setPushAttive] = useState(false);
   const [pushErrore, setPushErrore] = useState(null);
 
@@ -60,21 +62,24 @@ export default function AcHomeScadenze() {
       data_scadenza: s.data_scadenza,
       ricorrenza: s.ricorrenza || "una_tantum",
     });
+    setPersona(s.persona || getPersonaPredefinita());
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function annullaModifica() {
     setEditingId(null);
     setNuova(VUOTO);
+    setPersona(getPersonaPredefinita());
   }
 
   async function handleNuova() {
     if (!nuova.titolo.trim() || !nuova.data_scadenza) return;
+    const payload = { ...nuova, persona };
     if (editingId) {
-      await aggiornaScadenza(editingId, nuova);
+      await aggiornaScadenza(editingId, payload);
       setEditingId(null);
     } else {
-      await creaScadenza(nuova);
+      await creaScadenza(payload);
     }
     setNuova(VUOTO);
     caricaScadenze();
@@ -181,6 +186,8 @@ export default function AcHomeScadenze() {
           <option value="biennale">Ogni due anni (es. revisione)</option>
         </select>
 
+        <PersonaSelector value={persona} onChange={setPersona} />
+
         <button onClick={handleNuova} className="w-full py-2.5 rounded-xl font-display text-sm" style={{ background: T.forest, color: "#fff" }}>
           {editingId ? "Aggiorna scadenza" : "Aggiungi scadenza"}
         </button>
@@ -196,7 +203,7 @@ export default function AcHomeScadenze() {
               <div>
                 <p className="text-sm font-medium" style={{ color: "#fff" }}>{s.titolo}</p>
                 <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
-                  {s.data_scadenza} {s.ac_home_veicoli?.nome ? `· ${s.ac_home_veicoli.nome}` : ""} {s.ac_home_categorie?.nome ? `· ${s.ac_home_categorie.nome}` : ""} ·{" "}
+                  {s.data_scadenza} {s.ac_home_veicoli?.nome ? `· ${s.ac_home_veicoli.nome}` : ""} {s.ac_home_categorie?.nome ? `· ${s.ac_home_categorie.nome}` : ""}{s.persona ? ` · ${s.persona}` : ""} ·{" "}
                   {giorni < 0 ? "scaduta" : giorni === 0 ? "oggi" : `tra ${giorni} giorni`}
                   {s.ricorrenza !== "una_tantum" && ` · si ripete ${s.ricorrenza === "annuale" ? "ogni anno" : "ogni 2 anni"}`}
                 </p>

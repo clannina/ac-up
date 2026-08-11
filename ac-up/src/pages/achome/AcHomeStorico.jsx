@@ -58,6 +58,16 @@ export default function AcHomeStorico() {
     return Object.values(mappa).sort((a, b) => b.totale - a.totale);
   }, [speseAnno]);
 
+  // Chi spende cosa: totale annuale per persona
+  const totalePerPersona = useMemo(() => {
+    const mappa = { Anna: 0, Vanna: 0, "Non specificato": 0 };
+    speseAnno.forEach((s) => {
+      const chiave = s.persona || "Non specificato";
+      mappa[chiave] = (mappa[chiave] || 0) + Number(s.importo);
+    });
+    return mappa;
+  }, [speseAnno]);
+
   function speseDelMese(indiceMese) {
     return speseAnno
       .filter((s) => new Date(s.data).getMonth() === indiceMese)
@@ -110,6 +120,24 @@ export default function AcHomeStorico() {
                 <p className="font-mono-num text-base" style={{ color: risparmioAnno >= 0 ? "#fff" : "#ffd0d0" }}>€ {risparmioAnno.toFixed(0)}</p>
               </div>
             </div>
+          </div>
+
+          {/* Chi spende cosa */}
+          <div className={`${GLASS} rounded-3xl p-4 mb-5`}>
+            <p className="font-display text-sm mb-3" style={{ color: "#fff" }}>Chi spende cosa</p>
+            <div className="flex gap-2">
+              {["Anna", "Vanna"].map((p) => (
+                <div key={p} className="flex-1 rounded-2xl p-3 text-center" style={{ background: "rgba(255,255,255,0.12)" }}>
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>{p}</p>
+                  <p className="font-mono-num text-lg" style={{ color: "#fff" }}>€ {totalePerPersona[p].toFixed(0)}</p>
+                </div>
+              ))}
+            </div>
+            {totalePerPersona["Non specificato"] > 0 && (
+              <p className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.6)" }}>
+                € {totalePerPersona["Non specificato"].toFixed(0)} senza persona indicata
+              </p>
+            )}
           </div>
 
           {/* Grafico andamento mensile */}

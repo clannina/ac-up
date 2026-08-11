@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Home as HomeIcon, Car, Bike, HeartPulse } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { getCategorie, creaCategoria, getSpese, creaSpesa, aggiornaSpesa, eliminaSpesa, caricaFotoScontrino, getTotaleGenerale } from "../../lib/acHome";
+import PersonaSelector, { getPersonaPredefinita } from "../../components/PersonaSelector.jsx";
 
 const GRUPPI = [
   { id: "casa", label: "Casa", icon: HomeIcon },
@@ -31,6 +32,7 @@ export default function AcHomeSpese() {
   const [salvando, setSalvando] = useState(false);
   const [errore, setErrore] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [persona, setPersona] = useState(getPersonaPredefinita());
 
   useEffect(() => {
     caricaCategorie();
@@ -71,6 +73,7 @@ export default function AcHomeSpese() {
     setData(s.data);
     setNota(s.nota || "");
     setFoto(null);
+    setPersona(s.persona || getPersonaPredefinita());
     setErrore(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -81,6 +84,7 @@ export default function AcHomeSpese() {
     setNota("");
     setFoto(null);
     setData(oggi.toISOString().slice(0, 10));
+    setPersona(getPersonaPredefinita());
     setErrore(null);
   }
 
@@ -97,10 +101,10 @@ export default function AcHomeSpese() {
       if (foto) foto_url = await caricaFotoScontrino(foto);
 
       if (editingId) {
-        await aggiornaSpesa(editingId, { categoria_id: categoriaId, importo: parseFloat(importo), data, nota, foto_url });
+        await aggiornaSpesa(editingId, { categoria_id: categoriaId, importo: parseFloat(importo), data, nota, foto_url, persona });
         setEditingId(null);
       } else {
-        await creaSpesa({ categoria_id: categoriaId, importo: parseFloat(importo), data, nota, foto_url });
+        await creaSpesa({ categoria_id: categoriaId, importo: parseFloat(importo), data, nota, foto_url, persona });
       }
 
       setImporto("");
@@ -219,6 +223,8 @@ export default function AcHomeSpese() {
           style={{ color: "#fff" }}
         />
 
+        <PersonaSelector value={persona} onChange={setPersona} />
+
         {errore && <p className="text-xs text-red-100 mb-2">{errore}</p>}
 
         <button
@@ -253,7 +259,7 @@ export default function AcHomeSpese() {
               <p className="text-sm font-medium" style={{ color: "#fff" }}>
                 {s.ac_home_categorie?.nome || "—"} {s.ricorrente_id && <span className="text-xs opacity-70">· ricorrente</span>}
               </p>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>{s.data} {s.nota ? `· ${s.nota}` : ""}</p>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>{s.data} {s.persona ? `· ${s.persona}` : ""} {s.nota ? `· ${s.nota}` : ""}</p>
             </div>
             <div className="flex items-center gap-2">
               <p className="font-mono-num font-semibold" style={{ color: "#fff" }}>€ {Number(s.importo).toFixed(2)}</p>

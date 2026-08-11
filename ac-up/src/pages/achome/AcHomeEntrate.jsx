@@ -13,6 +13,7 @@ import {
   eliminaEntrataRicorrente,
   getSpese,
 } from "../../lib/acHome";
+import PersonaSelector, { getPersonaPredefinita } from "../../components/PersonaSelector.jsx";
 
 const GRUPPI = ["casa", "auto", "scooter", "mediche"];
 const oggi = new Date();
@@ -28,6 +29,8 @@ export default function AcHomeEntrate() {
   const [nuovaRicorrente, setNuovaRicorrente] = useState({ importo: "", descrizione: "", giorno_mese: "1" });
   const [editingEntrataId, setEditingEntrataId] = useState(null);
   const [editingRicorrenteId, setEditingRicorrenteId] = useState(null);
+  const [personaEntrata, setPersonaEntrata] = useState(getPersonaPredefinita());
+  const [personaRicorrente, setPersonaRicorrente] = useState(getPersonaPredefinita());
 
   useEffect(() => {
     caricaEntrate();
@@ -51,21 +54,23 @@ export default function AcHomeEntrate() {
   function handleModificaEntrata(e) {
     setEditingEntrataId(e.id);
     setNuova({ importo: String(e.importo), descrizione: e.descrizione || "", data: e.data });
+    setPersonaEntrata(e.persona || getPersonaPredefinita());
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function annullaModificaEntrata() {
     setEditingEntrataId(null);
     setNuova({ importo: "", descrizione: "", data: oggi.toISOString().slice(0, 10) });
+    setPersonaEntrata(getPersonaPredefinita());
   }
 
   async function handleNuova() {
     if (!nuova.importo || !nuova.data) return;
     if (editingEntrataId) {
-      await aggiornaEntrata(editingEntrataId, { importo: parseFloat(nuova.importo), descrizione: nuova.descrizione, data: nuova.data });
+      await aggiornaEntrata(editingEntrataId, { importo: parseFloat(nuova.importo), descrizione: nuova.descrizione, data: nuova.data, persona: personaEntrata });
       setEditingEntrataId(null);
     } else {
-      await creaEntrata({ importo: parseFloat(nuova.importo), descrizione: nuova.descrizione, data: nuova.data });
+      await creaEntrata({ importo: parseFloat(nuova.importo), descrizione: nuova.descrizione, data: nuova.data, persona: personaEntrata });
     }
     setNuova({ importo: "", descrizione: "", data: oggi.toISOString().slice(0, 10) });
     caricaEntrate();
@@ -80,12 +85,14 @@ export default function AcHomeEntrate() {
   function handleModificaRicorrente(r) {
     setEditingRicorrenteId(r.id);
     setNuovaRicorrente({ importo: String(r.importo), descrizione: r.descrizione || "", giorno_mese: String(r.giorno_mese) });
+    setPersonaRicorrente(r.persona || getPersonaPredefinita());
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function annullaModificaRicorrente() {
     setEditingRicorrenteId(null);
     setNuovaRicorrente({ importo: "", descrizione: "", giorno_mese: "1" });
+    setPersonaRicorrente(getPersonaPredefinita());
   }
 
   async function handleNuovaRicorrente() {
@@ -94,6 +101,7 @@ export default function AcHomeEntrate() {
       importo: parseFloat(nuovaRicorrente.importo),
       descrizione: nuovaRicorrente.descrizione,
       giorno_mese: parseInt(nuovaRicorrente.giorno_mese, 10) || 1,
+      persona: personaRicorrente,
     };
     if (editingRicorrenteId) {
       await aggiornaEntrataRicorrente(editingRicorrenteId, payload);
@@ -178,6 +186,8 @@ export default function AcHomeEntrate() {
           style={{ background: "#fff" }}
         />
 
+        <PersonaSelector value={personaEntrata} onChange={setPersonaEntrata} />
+
         <button onClick={handleNuova} className="w-full py-2.5 rounded-xl font-display text-sm" style={{ background: T.forest, color: "#fff" }}>
           {editingEntrataId ? "Aggiorna entrata" : "Aggiungi entrata"}
         </button>
@@ -192,7 +202,7 @@ export default function AcHomeEntrate() {
               <p className="text-sm font-medium" style={{ color: "#fff" }}>
                 {e.descrizione || "Entrata"} {e.entrata_ricorrente_id && <span className="text-xs opacity-70">· ricorrente</span>}
               </p>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>{e.data}</p>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>{e.data}{e.persona ? ` · ${e.persona}` : ""}</p>
             </div>
             <div className="flex items-center gap-2">
               <p className="font-mono-num font-semibold" style={{ color: "#fff" }}>€ {Number(e.importo).toFixed(2)}</p>
@@ -252,6 +262,8 @@ export default function AcHomeEntrate() {
           style={{ background: "#fff" }}
         />
 
+        <PersonaSelector value={personaRicorrente} onChange={setPersonaRicorrente} />
+
         <button onClick={handleNuovaRicorrente} className="w-full py-2.5 rounded-xl font-display text-sm" style={{ background: T.forest, color: "#fff" }}>
           {editingRicorrenteId ? "Aggiorna entrata ricorrente" : "Aggiungi entrata ricorrente"}
         </button>
@@ -264,7 +276,7 @@ export default function AcHomeEntrate() {
           <div key={r.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`} style={{ opacity: r.attiva ? 1 : 0.55, outline: editingRicorrenteId === r.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
             <div>
               <p className="text-sm font-medium" style={{ color: "#fff" }}>{r.descrizione || "Entrata"}</p>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>ogni {r.giorno_mese} del mese</p>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>ogni {r.giorno_mese} del mese{r.persona ? ` · ${r.persona}` : ""}</p>
             </div>
             <div className="flex items-center gap-2">
               <p className="font-mono-num font-semibold text-sm" style={{ color: "#fff" }}>€ {Number(r.importo).toFixed(2)}</p>
