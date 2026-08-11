@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Home as HomeIcon, Car, Bike, HeartPulse } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
-import { getCategorie, creaCategoria, getSpese, creaSpesa, aggiornaSpesa, eliminaSpesa, caricaFotoScontrino, getTotaleGenerale } from "../../lib/acHome";
+import { getCategorie, creaCategoria, getSpese, creaSpesa, aggiornaSpesa, eliminaSpesa, toggleRimborsoSpesa, caricaFotoScontrino, getTotaleGenerale } from "../../lib/acHome";
 import PersonaSelector, { getPersonaPredefinita } from "../../components/PersonaSelector.jsx";
 
 const GRUPPI = [
@@ -34,6 +34,7 @@ export default function AcHomeSpese() {
   const [editingId, setEditingId] = useState(null);
   const [persona, setPersona] = useState(getPersonaPredefinita());
   const [condivisa, setCondivisa] = useState(false);
+  const [rimborsato, setRimborsato] = useState(false);
 
   useEffect(() => {
     caricaCategorie();
@@ -76,6 +77,7 @@ export default function AcHomeSpese() {
     setFoto(null);
     setPersona(s.persona || getPersonaPredefinita());
     setCondivisa(!!s.condivisa);
+    setRimborsato(!!s.rimborsato);
     setErrore(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -88,6 +90,7 @@ export default function AcHomeSpese() {
     setData(oggi.toISOString().slice(0, 10));
     setPersona(getPersonaPredefinita());
     setCondivisa(false);
+    setRimborsato(false);
     setErrore(null);
   }
 
@@ -104,10 +107,10 @@ export default function AcHomeSpese() {
       if (foto) foto_url = await caricaFotoScontrino(foto);
 
       if (editingId) {
-        await aggiornaSpesa(editingId, { categoria_id: categoriaId, importo: parseFloat(importo), data, nota, foto_url, persona, condivisa });
+        await aggiornaSpesa(editingId, { categoria_id: categoriaId, importo: parseFloat(importo), data, nota, foto_url, persona, condivisa, rimborsato });
         setEditingId(null);
       } else {
-        await creaSpesa({ categoria_id: categoriaId, importo: parseFloat(importo), data, nota, foto_url, persona, condivisa });
+        await creaSpesa({ categoria_id: categoriaId, importo: parseFloat(importo), data, nota, foto_url, persona, condivisa, rimborsato: false });
       }
 
       setImporto("");
@@ -128,6 +131,11 @@ export default function AcHomeSpese() {
     if (editingId === id) annullaModifica();
     caricaSpese();
     caricaTotaleGenerale();
+  }
+
+  async function handleToggleRimborso(s) {
+    await toggleRimborsoSpesa(s.id, !s.rimborsato);
+    caricaSpese();
   }
 
   return (
@@ -273,19 +281,44 @@ export default function AcHomeSpese() {
       </div>
 
       {spese.some((s) => s.condivisa) && (
-        <div className={`${GLASS} rounded-2xl p-4 mb-4 flex justify-between`}>
-          <div>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>Spese condivise questo mese</p>
-            <p className="font-mono-num text-lg" style={{ color: "#fff" }}>
-              € {spese.filter((s) => s.condivisa).reduce((tot, s) => tot + Number(s.importo), 0).toFixed(2)}
-            </p>
+        <div className={`${GLASS} rounded-2xl p-4 mb-4`}>
+          <div className="flex justify-between mb-3">
+            <div>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>Spese condivise questo mese</p>
+              <p className="font-mono-num text-lg" style={{ color: "#fff" }}>
+                € {spese.filter((s) => s.condivisa).reduce((tot, s) => tot + Number(s.importo), 0).toFixed(2)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>Quota a testa (50%)</p>
+              <p className="font-mono-num text-lg" style={{ color: "#fff" }}>
+                € {(spese.filter((s) => s.condivisa).reduce((tot, s) => tot + Number(s.importo), 0) / 2).toFixed(2)}
+              </p>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>Quota a testa (50%)</p>
-            <p className="font-mono-num text-lg" style={{ color: "#fff" }}>
-              € {(spese.filter((s) => s.condivisa).reduce((tot, s) => tot + Number(s.importo), 0) / 2).toFixed(2)}
-            </p>
-          </div>
+
+          {(() => {
+            const nonSaldate = spese.filter((s) => s.condivisa && !s.rimborsato);
+            const doveVannaAnna = nonSaldate.filter((s) => s.persona === "Anna").reduce((t, s) => t + Number(s.importo) / 2, 0);
+            const doveAnnaVanna = nonSaldate.filter((s) => s.persona === "Vanna").reduce((t, s) => t + Number(s.importo) / 2, 0);
+            if (doveVannaAnna === 0 && doveAnnaVanna === 0) {
+              return <p className="text-xs" style={{ color: "rgba(255,255,255,0.8)" }}>✓ Tutto saldato tra Anna e Vanna.</p>;
+            }
+            return (
+              <div className="flex flex-col gap-1 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.2)" }}>
+                {doveVannaAnna > 0 && (
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.9)" }}>
+                    Vanna deve restituire ad Anna: <span className="font-mono-num font-semibold">€ {doveVannaAnna.toFixed(2)}</span>
+                  </p>
+                )}
+                {doveAnnaVanna > 0 && (
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.9)" }}>
+                    Anna deve restituire a Vanna: <span className="font-mono-num font-semibold">€ {doveAnnaVanna.toFixed(2)}</span>
+                  </p>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -299,12 +332,21 @@ export default function AcHomeSpese() {
                 {s.ac_home_categorie?.nome || "—"} {s.ricorrente_id && <span className="text-xs opacity-70">· ricorrente</span>} {s.condivisa && <span className="text-xs opacity-70">· condivisa</span>}
               </p>
               <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
-                {s.data} {s.persona ? `· ${s.persona}` : ""} {s.nota ? `· ${s.nota}` : ""}
-                {s.condivisa && ` · quota € ${(Number(s.importo) / 2).toFixed(2)}`}
+                {s.data} {s.persona ? `· pagato da ${s.persona}` : ""} {s.nota ? `· ${s.nota}` : ""}
+                {s.condivisa && ` · quota € ${(Number(s.importo) / 2).toFixed(2)} · ${s.rimborsato ? "restituito" : "da restituire"}`}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <p className="font-mono-num font-semibold" style={{ color: "#fff" }}>€ {Number(s.importo).toFixed(2)}</p>
+              {s.condivisa && (
+                <button
+                  onClick={() => handleToggleRimborso(s)}
+                  className="text-xs px-2 py-1 rounded-lg"
+                  style={s.rimborsato ? { background: "rgba(255,255,255,0.95)", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+                >
+                  {s.rimborsato ? "Restituito ✓" : "Da restituire"}
+                </button>
+              )}
               <button onClick={() => handleModifica(s)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
                 Modifica
               </button>
