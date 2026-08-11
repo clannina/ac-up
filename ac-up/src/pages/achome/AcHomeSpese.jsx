@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Home as HomeIcon, Car, Bike, HeartPulse } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
-import { getCategorie, creaCategoria, getSpese, creaSpesa, aggiornaSpesa, eliminaSpesa, toggleRimborsoSpesa, caricaFotoScontrino, getTotaleGenerale } from "../../lib/acHome";
+import { getCategorie, creaCategoria, getSpese, creaSpesa, aggiornaSpesa, eliminaSpesa, registraRimborso, segnaRimborsoCompleto, azzeraRimborso, caricaFotoScontrino, getTotaleGenerale } from "../../lib/acHome";
 import PersonaSelector, { getPersonaPredefinita } from "../../components/PersonaSelector.jsx";
 
 const GRUPPI = [
@@ -35,6 +35,7 @@ export default function AcHomeSpese() {
   const [persona, setPersona] = useState(getPersonaPredefinita());
   const [condivisa, setCondivisa] = useState(false);
   const [rimborsato, setRimborsato] = useState(false);
+  const [importoParziale, setImportoParziale] = useState({});
 
   useEffect(() => {
     caricaCategorie();
@@ -133,8 +134,21 @@ export default function AcHomeSpese() {
     caricaTotaleGenerale();
   }
 
-  async function handleToggleRimborso(s) {
-    await toggleRimborsoSpesa(s.id, !s.rimborsato);
+  async function handleRegistraParziale(s) {
+    const valore = parseFloat(importoParziale[s.id]);
+    if (!valore || valore <= 0) return;
+    await registraRimborso(s.id, valore);
+    setImportoParziale((prev) => ({ ...prev, [s.id]: "" }));
+    caricaSpese();
+  }
+
+  async function handleSegnaCompleto(s) {
+    await segnaRimborsoCompleto(s.id, s.importo);
+    caricaSpese();
+  }
+
+  async function handleAzzeraRimborso(s) {
+    await azzeraRimborso(s.id);
     caricaSpese();
   }
 
@@ -298,9 +312,10 @@ export default function AcHomeSpese() {
           </div>
 
           {(() => {
-            const nonSaldate = spese.filter((s) => s.condivisa && !s.rimborsato);
-            const doveVannaAnna = nonSaldate.filter((s) => s.persona === "Anna").reduce((t, s) => t + Number(s.importo) / 2, 0);
-            const doveAnnaVanna = nonSaldate.filter((s) => s.persona === "Vanna").reduce((t, s) => t + Number(s.importo) / 2, 0);
+            const rimastoDi = (s) => Math.max(0, Number(s.importo) / 2 - Number(s.importo_rimborsato || 0));
+            const nonSaldate = spese.filter((s) => s.condivisa && rimastoDi(s) > 0);
+            const doveVannaAnna = nonSaldate.filter((s) => s.persona === "Anna").reduce((t, s) => t + rimastoDi(s), 0);
+            const doveAnnaVanna = nonSaldate.filter((s) => s.persona === "Vanna").reduce((t, s) => t + rimastoDi(s), 0);
             if (doveVannaAnna === 0 && doveAnnaVanna === 0) {
               return <p className="text-xs" style={{ color: "rgba(255,255,255,0.8)" }}>✓ Tutto saldato tra Anna e Vanna.</p>;
             }
@@ -308,12 +323,12 @@ export default function AcHomeSpese() {
               <div className="flex flex-col gap-1 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.2)" }}>
                 {doveVannaAnna > 0 && (
                   <p className="text-xs" style={{ color: "rgba(255,255,255,0.9)" }}>
-                    Vanna deve restituire ad Anna: <span className="font-mono-num font-semibold">€ {doveVannaAnna.toFixed(2)}</span>
+                    Vanna deve ancora restituire ad Anna: <span className="font-mono-num font-semibold">€ {doveVannaAnna.toFixed(2)}</span>
                   </p>
                 )}
                 {doveAnnaVanna > 0 && (
                   <p className="text-xs" style={{ color: "rgba(255,255,255,0.9)" }}>
-                    Anna deve restituire a Vanna: <span className="font-mono-num font-semibold">€ {doveAnnaVanna.toFixed(2)}</span>
+                    Anna deve ancora restituire a Vanna: <span className="font-mono-num font-semibold">€ {doveAnnaVanna.toFixed(2)}</span>
                   </p>
                 )}
               </div>
@@ -325,37 +340,70 @@ export default function AcHomeSpese() {
       <h2 className="font-display text-sm mb-2" style={{ color: "#fff" }}>Spese di questo mese</h2>
       <div className="flex flex-col gap-2">
         {spese.length === 0 && <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessuna spesa registrata.</p>}
-        {spese.map((s) => (
-          <div key={s.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`} style={{ outline: editingId === s.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
-            <div>
-              <p className="text-sm font-medium" style={{ color: "#fff" }}>
-                {s.ac_home_categorie?.nome || "—"} {s.ricorrente_id && <span className="text-xs opacity-70">· ricorrente</span>} {s.condivisa && <span className="text-xs opacity-70">· condivisa</span>}
-              </p>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
-                {s.data} {s.persona ? `· pagato da ${s.persona}` : ""} {s.nota ? `· ${s.nota}` : ""}
-                {s.condivisa && ` · quota € ${(Number(s.importo) / 2).toFixed(2)} · ${s.rimborsato ? "restituito" : "da restituire"}`}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <p className="font-mono-num font-semibold" style={{ color: "#fff" }}>€ {Number(s.importo).toFixed(2)}</p>
+        {spese.map((s) => {
+          const quota = Number(s.importo) / 2;
+          const giaRestituito = Number(s.importo_rimborsato || 0);
+          const rimasto = Math.max(0, quota - giaRestituito);
+          const saldato = s.condivisa && rimasto <= 0;
+
+          return (
+            <div key={s.id} className={`${GLASS} rounded-2xl px-4 py-3`} style={{ outline: editingId === s.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: "#fff" }}>
+                    {s.ac_home_categorie?.nome || "—"} {s.ricorrente_id && <span className="text-xs opacity-70">· ricorrente</span>} {s.condivisa && <span className="text-xs opacity-70">· condivisa</span>}
+                  </p>
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
+                    {s.data} {s.persona ? `· pagato da ${s.persona}` : ""} {s.nota ? `· ${s.nota}` : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className="font-mono-num font-semibold" style={{ color: "#fff" }}>€ {Number(s.importo).toFixed(2)}</p>
+                  <button onClick={() => handleModifica(s)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                    Modifica
+                  </button>
+                  <button onClick={() => handleElimina(s.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}>
+                    Elimina
+                  </button>
+                </div>
+              </div>
+
               {s.condivisa && (
-                <button
-                  onClick={() => handleToggleRimborso(s)}
-                  className="text-xs px-2 py-1 rounded-lg"
-                  style={s.rimborsato ? { background: "rgba(255,255,255,0.95)", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
-                >
-                  {s.rimborsato ? "Restituito ✓" : "Da restituire"}
-                </button>
+                <div className="mt-2 pt-2 flex flex-wrap items-center gap-2" style={{ borderTop: "1px solid rgba(255,255,255,0.2)" }}>
+                  {saldato ? (
+                    <p className="text-xs font-medium" style={{ color: "#fff" }}>
+                      ✓ Quota di € {quota.toFixed(2)} restituita per intero
+                      {giaRestituito > 0 && (
+                        <button onClick={() => handleAzzeraRimborso(s)} className="ml-2 underline opacity-70">annulla</button>
+                      )}
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>
+                        Restituiti € {giaRestituito.toFixed(2)} di € {quota.toFixed(2)} · mancano <span className="font-mono-num font-semibold">€ {rimasto.toFixed(2)}</span>
+                      </p>
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder={`es. ${rimasto.toFixed(2)}`}
+                        value={importoParziale[s.id] ?? ""}
+                        onChange={(e) => setImportoParziale((prev) => ({ ...prev, [s.id]: e.target.value }))}
+                        className="w-24 rounded-lg px-2 py-1 text-xs font-mono-num"
+                        style={{ background: "#fff" }}
+                      />
+                      <button onClick={() => handleRegistraParziale(s)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                        Registra
+                      </button>
+                      <button onClick={() => handleSegnaCompleto(s)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.95)", color: T.forest }}>
+                        Salda tutto
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
-              <button onClick={() => handleModifica(s)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
-                Modifica
-              </button>
-              <button onClick={() => handleElimina(s.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}>
-                Elimina
-              </button>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
