@@ -133,11 +133,11 @@ export async function getRicorrenti() {
   return data;
 }
 
-export async function creaRicorrente({ categoria_id, importo, descrizione, giorno_mese }) {
+export async function creaRicorrente({ categoria_id, importo, descrizione, giorno_mese, fino_al }) {
   const { data: userData } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("ac_home_ricorrenti")
-    .insert({ categoria_id, importo, descrizione, giorno_mese: giorno_mese || 1, user_id: userData.user.id })
+    .insert({ categoria_id, importo, descrizione, giorno_mese: giorno_mese || 1, fino_al: fino_al || null, user_id: userData.user.id })
     .select()
     .single();
   if (error) throw error;
@@ -237,10 +237,14 @@ export async function generaSpeseRicorrentiDelMese(mese, anno) {
   if (attive.length === 0) return;
 
   // Genera solo le ricorrenti che NON risultano gia' generate per questo mese/anno
-  // (controllo sulla ricorrente stessa, cosi' anche se l'utente cancella la spesa generata non viene ricreata).
-  const daGenerare = attive.filter(
-    (r) => !(r.ultimo_mese_generato === mese && r.ultimo_anno_generato === anno)
-  );
+  // (controllo sulla ricorrente stessa, cosi' anche se l'utente cancella la spesa generata non viene ricreata),
+  // e che non hanno gia' superato la data di fine (es. fine di un finanziamento).
+  const inizioMese = new Date(anno, mese - 1, 1);
+  const daGenerare = attive.filter((r) => {
+    const giaGenerata = r.ultimo_mese_generato === mese && r.ultimo_anno_generato === anno;
+    const scaduta = r.fino_al && new Date(r.fino_al) < inizioMese;
+    return !giaGenerata && !scaduta;
+  });
   if (daGenerare.length === 0) return;
 
   const ultimoGiorno = new Date(anno, mese, 0).getDate();
