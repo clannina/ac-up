@@ -347,7 +347,14 @@ export default function AcHomeSpese() {
           const saldato = s.condivisa && rimasto <= 0;
 
           return (
-            <div key={s.id} className={`${GLASS} rounded-2xl px-4 py-3`} style={{ outline: editingId === s.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
+            <div
+              key={s.id}
+              className={`${GLASS} rounded-2xl px-4 py-3`}
+              style={{
+                outline: editingId === s.id ? "2px solid rgba(255,255,255,0.6)" : "none",
+                borderLeft: s.condivisa && !saldato ? "4px solid #ffcf5c" : undefined,
+              }}
+            >
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm font-medium" style={{ color: "#fff" }}>
@@ -380,7 +387,7 @@ export default function AcHomeSpese() {
                   ) : (
                     <>
                       <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>
-                        Restituiti € {giaRestituito.toFixed(2)} di € {quota.toFixed(2)} · mancano <span className="font-mono-num font-semibold">€ {rimasto.toFixed(2)}</span>
+                        Restituiti € {giaRestituito.toFixed(2)} di € {quota.toFixed(2)} · mancano <span className="font-mono-num font-bold text-sm" style={{ color: "#ffcf5c" }}>€ {rimasto.toFixed(2)}</span>
                       </p>
                       <input
                         type="number"
