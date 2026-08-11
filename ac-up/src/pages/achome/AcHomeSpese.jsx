@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Home as HomeIcon, Car, Bike } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
-import { getCategorie, creaCategoria, getSpese, creaSpesa, caricaFotoScontrino, getTotaleGenerale } from "../../lib/acHome";
+import { getCategorie, creaCategoria, getSpese, creaSpesa, eliminaSpesa, caricaFotoScontrino, getTotaleGenerale } from "../../lib/acHome";
 
 const GRUPPI = [
   { id: "casa", label: "Casa", icon: HomeIcon },
@@ -83,6 +83,12 @@ export default function AcHomeSpese() {
     } finally {
       setSalvando(false);
     }
+  }
+
+  async function handleElimina(id) {
+    await eliminaSpesa(id);
+    caricaSpese();
+    caricaTotaleGenerale();
   }
 
   return (
@@ -209,7 +215,12 @@ export default function AcHomeSpese() {
               </p>
               <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>{s.data} {s.nota ? `· ${s.nota}` : ""}</p>
             </div>
-            <p className="font-mono-num font-semibold" style={{ color: "#fff" }}>€ {Number(s.importo).toFixed(2)}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-mono-num font-semibold" style={{ color: "#fff" }}>€ {Number(s.importo).toFixed(2)}</p>
+              <button onClick={() => handleElimina(s.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}>
+                Elimina
+              </button>
+            </div>
           </div>
         ))}
       </div>
