@@ -38,11 +38,11 @@ export async function getSpese({ mese, anno, gruppo } = {}) {
   return gruppo ? data.filter((s) => s.ac_home_categorie?.gruppo === gruppo) : data;
 }
 
-export async function creaSpesa({ categoria_id, importo, data, nota, foto_url, ricorrente_id }) {
+export async function creaSpesa({ categoria_id, importo, data, nota, foto_url, ricorrente_id, persona }) {
   const { data: userData } = await supabase.auth.getUser();
   const { data: spesa, error } = await supabase
     .from("ac_home_spese")
-    .insert({ categoria_id, importo, data, nota, foto_url, ricorrente_id: ricorrente_id || null, user_id: userData.user.id })
+    .insert({ categoria_id, importo, data, nota, foto_url, ricorrente_id: ricorrente_id || null, persona: persona || null, user_id: userData.user.id })
     .select()
     .single();
   if (error) throw error;
@@ -54,10 +54,10 @@ export async function eliminaSpesa(id) {
   if (error) throw error;
 }
 
-export async function aggiornaSpesa(id, { categoria_id, importo, data, nota, foto_url }) {
+export async function aggiornaSpesa(id, { categoria_id, importo, data, nota, foto_url, persona }) {
   const { data: spesa, error } = await supabase
     .from("ac_home_spese")
-    .update({ categoria_id, importo, data, nota, foto_url })
+    .update({ categoria_id, importo, data, nota, foto_url, persona: persona || null })
     .eq("id", id)
     .select()
     .single();
@@ -144,11 +144,11 @@ export async function getRicorrenti() {
   return data;
 }
 
-export async function creaRicorrente({ categoria_id, importo, descrizione, giorno_mese, fino_al }) {
+export async function creaRicorrente({ categoria_id, importo, descrizione, giorno_mese, fino_al, persona }) {
   const { data: userData } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("ac_home_ricorrenti")
-    .insert({ categoria_id, importo, descrizione, giorno_mese: giorno_mese || 1, fino_al: fino_al || null, user_id: userData.user.id })
+    .insert({ categoria_id, importo, descrizione, giorno_mese: giorno_mese || 1, fino_al: fino_al || null, persona: persona || null, user_id: userData.user.id })
     .select()
     .single();
   if (error) throw error;
@@ -165,10 +165,10 @@ export async function eliminaRicorrente(id) {
   if (error) throw error;
 }
 
-export async function aggiornaRicorrente(id, { categoria_id, importo, descrizione, giorno_mese, fino_al }) {
+export async function aggiornaRicorrente(id, { categoria_id, importo, descrizione, giorno_mese, fino_al, persona }) {
   const { data, error } = await supabase
     .from("ac_home_ricorrenti")
-    .update({ categoria_id, importo, descrizione, giorno_mese: giorno_mese || 1, fino_al: fino_al || null })
+    .update({ categoria_id, importo, descrizione, giorno_mese: giorno_mese || 1, fino_al: fino_al || null, persona: persona || null })
     .eq("id", id)
     .select()
     .single();
@@ -220,7 +220,7 @@ export async function getScadenze() {
   return data;
 }
 
-export async function creaScadenza({ categoria_id, veicolo_id, titolo, data_scadenza, ricorrenza }) {
+export async function creaScadenza({ categoria_id, veicolo_id, titolo, data_scadenza, ricorrenza, persona }) {
   const { data: userData } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("ac_home_scadenze")
@@ -230,6 +230,7 @@ export async function creaScadenza({ categoria_id, veicolo_id, titolo, data_scad
       titolo,
       data_scadenza,
       ricorrenza: ricorrenza || "una_tantum",
+      persona: persona || null,
       user_id: userData.user.id,
     })
     .select()
@@ -243,7 +244,7 @@ export async function eliminaScadenza(id) {
   if (error) throw error;
 }
 
-export async function aggiornaScadenza(id, { categoria_id, veicolo_id, titolo, data_scadenza, ricorrenza }) {
+export async function aggiornaScadenza(id, { categoria_id, veicolo_id, titolo, data_scadenza, ricorrenza, persona }) {
   const { data, error } = await supabase
     .from("ac_home_scadenze")
     .update({
@@ -252,6 +253,7 @@ export async function aggiornaScadenza(id, { categoria_id, veicolo_id, titolo, d
       titolo,
       data_scadenza,
       ricorrenza: ricorrenza || "una_tantum",
+      persona: persona || null,
     })
     .eq("id", id)
     .select()
@@ -309,6 +311,7 @@ export async function generaSpeseRicorrentiDelMese(mese, anno) {
       data,
       nota: r.descrizione,
       ricorrente_id: r.id,
+      persona: r.persona || null,
       user_id: userData.user.id,
     });
     await supabase
@@ -331,11 +334,11 @@ export async function getEntrate(mese, anno) {
   return data;
 }
 
-export async function creaEntrata({ importo, descrizione, data, entrata_ricorrente_id }) {
+export async function creaEntrata({ importo, descrizione, data, entrata_ricorrente_id, persona }) {
   const { data: userData } = await supabase.auth.getUser();
   const { data: entrata, error } = await supabase
     .from("ac_home_entrate")
-    .insert({ importo, descrizione, data, entrata_ricorrente_id: entrata_ricorrente_id || null, user_id: userData.user.id })
+    .insert({ importo, descrizione, data, entrata_ricorrente_id: entrata_ricorrente_id || null, persona: persona || null, user_id: userData.user.id })
     .select()
     .single();
   if (error) throw error;
@@ -347,10 +350,10 @@ export async function eliminaEntrata(id) {
   if (error) throw error;
 }
 
-export async function aggiornaEntrata(id, { importo, descrizione, data }) {
+export async function aggiornaEntrata(id, { importo, descrizione, data, persona }) {
   const { data: entrata, error } = await supabase
     .from("ac_home_entrate")
-    .update({ importo, descrizione, data })
+    .update({ importo, descrizione, data, persona: persona || null })
     .eq("id", id)
     .select()
     .single();
@@ -365,11 +368,11 @@ export async function getEntrateRicorrenti() {
   return data;
 }
 
-export async function creaEntrataRicorrente({ importo, descrizione, giorno_mese }) {
+export async function creaEntrataRicorrente({ importo, descrizione, giorno_mese, persona }) {
   const { data: userData } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("ac_home_entrate_ricorrenti")
-    .insert({ importo, descrizione, giorno_mese: giorno_mese || 1, user_id: userData.user.id })
+    .insert({ importo, descrizione, giorno_mese: giorno_mese || 1, persona: persona || null, user_id: userData.user.id })
     .select()
     .single();
   if (error) throw error;
@@ -386,10 +389,10 @@ export async function eliminaEntrataRicorrente(id) {
   if (error) throw error;
 }
 
-export async function aggiornaEntrataRicorrente(id, { importo, descrizione, giorno_mese }) {
+export async function aggiornaEntrataRicorrente(id, { importo, descrizione, giorno_mese, persona }) {
   const { data, error } = await supabase
     .from("ac_home_entrate_ricorrenti")
-    .update({ importo, descrizione, giorno_mese: giorno_mese || 1 })
+    .update({ importo, descrizione, giorno_mese: giorno_mese || 1, persona: persona || null })
     .eq("id", id)
     .select()
     .single();
@@ -420,6 +423,7 @@ export async function generaEntrateRicorrentiDelMese(mese, anno) {
       data,
       descrizione: r.descrizione,
       entrata_ricorrente_id: r.id,
+      persona: r.persona || null,
       user_id: userData.user.id,
     });
     await supabase
