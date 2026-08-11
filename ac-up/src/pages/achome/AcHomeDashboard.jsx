@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Home as HomeIcon, Car, Bike, CalendarClock, Wallet } from "lucide-react";
+import { Home as HomeIcon, Car, Bike, CalendarClock, Wallet, HeartPulse } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import {
   getSpese,
@@ -14,6 +14,7 @@ const GRUPPI = [
   { id: "casa", label: "Casa", icon: HomeIcon },
   { id: "auto", label: "Auto", icon: Car },
   { id: "scooter", label: "Scooter", icon: Bike },
+  { id: "mediche", label: "Spese mediche", icon: HeartPulse },
 ];
 
 const oggi = new Date();
@@ -31,7 +32,7 @@ function giorniMancanti(dataScadenza) {
 }
 
 export default function AcHomeDashboard() {
-  const [totali, setTotali] = useState({ casa: 0, auto: 0, scooter: 0 });
+  const [totali, setTotali] = useState({ casa: 0, auto: 0, scooter: 0, mediche: 0 });
   const [scadenze, setScadenze] = useState([]);
   const [residuo, setResiduo] = useState(0);
 

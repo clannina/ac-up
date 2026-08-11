@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Home as HomeIcon, Car, Bike } from "lucide-react";
+import { Home as HomeIcon, Car, Bike, HeartPulse } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { getCategorie, creaCategoria, getSpese, creaSpesa, eliminaSpesa, caricaFotoScontrino, getTotaleGenerale } from "../../lib/acHome";
 
@@ -8,6 +8,7 @@ const GRUPPI = [
   { id: "casa", label: "Casa", icon: HomeIcon },
   { id: "auto", label: "Auto", icon: Car },
   { id: "scooter", label: "Scooter", icon: Bike },
+  { id: "mediche", label: "Spese mediche", icon: HeartPulse },
 ];
 
 const oggi = new Date();

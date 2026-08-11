@@ -12,7 +12,7 @@ import {
   getSpese,
 } from "../../lib/acHome";
 
-const GRUPPI = ["casa", "auto", "scooter"];
+const GRUPPI = ["casa", "auto", "scooter", "mediche"];
 const oggi = new Date();
 const MESE_CORRENTE = oggi.getMonth() + 1;
 const ANNO_CORRENTE = oggi.getFullYear();

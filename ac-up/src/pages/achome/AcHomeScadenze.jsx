@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Home as HomeIcon, Car, Bike } from "lucide-react";
+import { Home as HomeIcon, Car, Bike, HeartPulse } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { getCategorie, getScadenze, creaScadenza, eliminaScadenza, getVeicoli } from "../../lib/acHome";
 import { attivaNotifichePush, notifichePushAttive } from "../../lib/push";
@@ -8,6 +8,7 @@ const GRUPPI = [
   { id: "casa", label: "Casa", icon: HomeIcon },
   { id: "auto", label: "Auto", icon: Car },
   { id: "scooter", label: "Scooter", icon: Bike },
+  { id: "mediche", label: "Spese mediche", icon: HeartPulse },
 ];
 
 const BACKGROUND = "linear-gradient(180deg, #0DAE8C 0%, #1A7FA3 55%, #5FA8DC 100%)";
