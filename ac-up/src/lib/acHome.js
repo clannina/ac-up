@@ -236,19 +236,12 @@ export async function generaSpeseRicorrentiDelMese(mese, anno) {
   const attive = ricorrenti.filter((r) => r.attiva);
   if (attive.length === 0) return;
 
-  const inizio = `${anno}-${String(mese).padStart(2, "0")}-01`;
-  const fine = `${anno}-${String(mese).padStart(2, "0")}-31`;
-
-  const { data: giaGenerate, error } = await supabase
-    .from("ac_home_spese")
-    .select("ricorrente_id")
-    .gte("data", inizio)
-    .lte("data", fine)
-    .not("ricorrente_id", "is", null);
-  if (error) throw error;
-
-  const idGiaGenerati = new Set(giaGenerate.map((s) => s.ricorrente_id));
-  const daGenerare = attive.filter((r) => !idGiaGenerati.has(r.id));
+  // Genera solo le ricorrenti che NON risultano gia' generate per questo mese/anno
+  // (controllo sulla ricorrente stessa, cosi' anche se l'utente cancella la spesa generata non viene ricreata).
+  const daGenerare = attive.filter(
+    (r) => !(r.ultimo_mese_generato === mese && r.ultimo_anno_generato === anno)
+  );
+  if (daGenerare.length === 0) return;
 
   const ultimoGiorno = new Date(anno, mese, 0).getDate();
   const { data: userData } = await supabase.auth.getUser();
@@ -264,6 +257,10 @@ export async function generaSpeseRicorrentiDelMese(mese, anno) {
       ricorrente_id: r.id,
       user_id: userData.user.id,
     });
+    await supabase
+      .from("ac_home_ricorrenti")
+      .update({ ultimo_mese_generato: mese, ultimo_anno_generato: anno })
+      .eq("id", r.id);
   }
 }
 
@@ -331,19 +328,10 @@ export async function generaEntrateRicorrentiDelMese(mese, anno) {
   const attive = ricorrenti.filter((r) => r.attiva);
   if (attive.length === 0) return;
 
-  const inizio = `${anno}-${String(mese).padStart(2, "0")}-01`;
-  const fine = `${anno}-${String(mese).padStart(2, "0")}-31`;
-
-  const { data: giaGenerate, error } = await supabase
-    .from("ac_home_entrate")
-    .select("entrata_ricorrente_id")
-    .gte("data", inizio)
-    .lte("data", fine)
-    .not("entrata_ricorrente_id", "is", null);
-  if (error) throw error;
-
-  const idGiaGenerati = new Set(giaGenerate.map((e) => e.entrata_ricorrente_id));
-  const daGenerare = attive.filter((r) => !idGiaGenerati.has(r.id));
+  const daGenerare = attive.filter(
+    (r) => !(r.ultimo_mese_generato === mese && r.ultimo_anno_generato === anno)
+  );
+  if (daGenerare.length === 0) return;
 
   const ultimoGiorno = new Date(anno, mese, 0).getDate();
   const { data: userData } = await supabase.auth.getUser();
@@ -358,5 +346,9 @@ export async function generaEntrateRicorrentiDelMese(mese, anno) {
       entrata_ricorrente_id: r.id,
       user_id: userData.user.id,
     });
+    await supabase
+      .from("ac_home_entrate_ricorrenti")
+      .update({ ultimo_mese_generato: mese, ultimo_anno_generato: anno })
+      .eq("id", r.id);
   }
 }
