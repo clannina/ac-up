@@ -14,6 +14,7 @@ import AcHomeRicorrenti from "./pages/achome/AcHomeRicorrenti.jsx";
 import AcHomeScadenze from "./pages/achome/AcHomeScadenze.jsx";
 import AcHomeProfilo from "./pages/achome/AcHomeProfilo.jsx";
 import AcHomeEntrate from "./pages/achome/AcHomeEntrate.jsx";
+import AcHomeStorico from "./pages/achome/AcHomeStorico.jsx";
 
 export default function App() {
   return (
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="ac-home/scadenze" element={<AcHomeScadenze />} />
         <Route path="ac-home/profilo" element={<AcHomeProfilo />} />
         <Route path="ac-home/entrate" element={<AcHomeEntrate />} />
+        <Route path="ac-home/storico" element={<AcHomeStorico />} />
       </Route>
     </Routes>
   );
