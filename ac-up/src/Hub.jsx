@@ -10,7 +10,7 @@ function AppCard({ to, title, subtitle, logo, accent }) {
       className={`${GLASS} group relative flex flex-col justify-between p-6 rounded-3xl transition-transform duration-200 hover:-translate-y-1 active:scale-[0.98]`}
     >
       <div className="flex items-start justify-between">
-        <img src={logo} alt={title} className="w-10 h-10" />
+        <img src={logo} alt={title} className="w-20 h-20" />
         <span
           className={`text-xs font-mono uppercase tracking-wider ${accent} opacity-70 group-hover:opacity-100 transition-opacity`}
         >
