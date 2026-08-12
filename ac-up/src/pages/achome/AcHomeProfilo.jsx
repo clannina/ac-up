@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Car, Bike, Trash2, TrendingUp, Pencil } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { getVeicoli, creaVeicolo, aggiornaVeicolo, eliminaVeicolo } from "../../lib/acHome";
+import AcHomeHeader from "../../components/AcHomeHeader.jsx";
 
 const BACKGROUND = "linear-gradient(180deg, #0DAE8C 0%, #1A7FA3 55%, #5FA8DC 100%)";
 const VUOTO = { nome: "", targa: "", tipo: "auto" };
@@ -51,6 +52,7 @@ export default function AcHomeProfilo() {
 
   return (
     <div className="min-h-screen pb-28 px-4 pt-6" style={{ background: BACKGROUND }}>
+      <AcHomeHeader />
       <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Profilo</h1>
 
       <Link to="/ac-home/storico" className={`${GLASS} flex items-center gap-3 rounded-3xl p-4 mb-6`}>

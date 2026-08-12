@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Home as HomeIcon, Car, Bike, HeartPulse } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { getCategorie, getSpese, getBudget, impostaBudget } from "../../lib/acHome";
+import AcHomeHeader from "../../components/AcHomeHeader.jsx";
 
 const GRUPPI = [
   { id: "casa", label: "Casa", icon: HomeIcon },
@@ -55,6 +56,7 @@ export default function AcHomeBudget() {
 
   return (
     <div className="min-h-screen pb-28 px-4 pt-6" style={{ background: BACKGROUND }}>
+      <AcHomeHeader />
       <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Budget</h1>
 
       <div className="flex gap-2 mb-5">

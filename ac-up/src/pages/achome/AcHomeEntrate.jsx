@@ -14,6 +14,7 @@ import {
   getSpese,
 } from "../../lib/acHome";
 import PersonaSelector, { getPersonaPredefinita } from "../../components/PersonaSelector.jsx";
+import AcHomeHeader from "../../components/AcHomeHeader.jsx";
 
 const GRUPPI = ["casa", "auto", "scooter", "mediche"];
 const oggi = new Date();
@@ -131,6 +132,7 @@ export default function AcHomeEntrate() {
 
   return (
     <div className="min-h-screen pb-28 px-4 pt-6" style={{ background: BACKGROUND }}>
+      <AcHomeHeader />
       <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Entrate</h1>
 
       {/* Riepilogo residuo mensile */}

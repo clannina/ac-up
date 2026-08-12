@@ -3,6 +3,7 @@ import { Home as HomeIcon, Car, Bike, HeartPulse } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { getCategorie, creaRicorrente, aggiornaRicorrente, getRicorrenti, toggleRicorrente, eliminaRicorrente } from "../../lib/acHome";
 import PersonaSelector, { getPersonaPredefinita } from "../../components/PersonaSelector.jsx";
+import AcHomeHeader from "../../components/AcHomeHeader.jsx";
 
 const GRUPPI = [
   { id: "casa", label: "Casa", icon: HomeIcon },
@@ -87,6 +88,7 @@ export default function AcHomeRicorrenti() {
 
   return (
     <div className="min-h-screen pb-28 px-4 pt-6" style={{ background: BACKGROUND }}>
+      <AcHomeHeader />
       <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Ricorrenti</h1>
 
       <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.75)" }}>

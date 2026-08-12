@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Cart
 import { TrendingUp } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { getSpese, getEntrate } from "../../lib/acHome";
+import AcHomeHeader from "../../components/AcHomeHeader.jsx";
 
 const BACKGROUND = "linear-gradient(180deg, #0DAE8C 0%, #1A7FA3 55%, #5FA8DC 100%)";
 const MESI_LABEL = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
@@ -89,6 +90,7 @@ export default function AcHomeStorico() {
 
   return (
     <div className="min-h-screen pb-28 px-4 pt-6" style={{ background: BACKGROUND }}>
+      <AcHomeHeader />
       <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Storico</h1>
 
       {/* Selettore anno */}
