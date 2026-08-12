@@ -1,25 +1,23 @@
 import { Link } from "react-router-dom";
-import { PAGE_GRADIENT, GLASS } from "./lib/theme";
+import { GLASS } from "./lib/theme";
 
 // Card di lancio per ogni app dell'hub.
-// accent: classe Tailwind per il bordo/testo distintivo dell'app (corallo per AC UP, es. sky per AC Home)
-function AppCard({ to, title, subtitle, logo, accent }) {
+function AppCard({ to, title, subtitle, logo }) {
   return (
     <Link
       to={to}
       className={`${GLASS} group relative flex flex-col justify-between p-6 rounded-3xl transition-transform duration-200 hover:-translate-y-1 active:scale-[0.98]`}
     >
       <div className="flex items-start justify-between">
-        <img src={logo} alt={title} className="w-20 h-20" />
-        <span
-          className={`text-xs font-mono uppercase tracking-wider ${accent} opacity-70 group-hover:opacity-100 transition-opacity`}
-        >
-          Apri →
+        <img src={logo} alt={title} className="w-28 h-28" />
+        <span className="flex items-center gap-1 text-xs font-mono uppercase tracking-wider text-black opacity-80 group-hover:opacity-100 transition-opacity">
+          Apri
+          <span className="text-lg font-bold">→</span>
         </span>
       </div>
       <div className="mt-8">
-        <h2 className={`text-2xl font-semibold ${accent}`}>{title}</h2>
-        <p className="text-sm opacity-70 mt-1">{subtitle}</p>
+        <h2 className="text-2xl font-semibold text-black">{title}</h2>
+        <p className="text-sm opacity-70 mt-1 text-black">{subtitle}</p>
       </div>
     </Link>
   );
@@ -27,10 +25,14 @@ function AppCard({ to, title, subtitle, logo, accent }) {
 
 export default function Hub() {
   return (
-    <div className={`${PAGE_GRADIENT} min-h-screen flex flex-col items-center px-5 py-12`}>
+    <div className="bg-gradient-to-br from-[#0f6e73] to-[#f2b705] min-h-screen flex flex-col items-center px-5 py-12">
       <header className="text-center mb-10">
-        <h1 className="text-3xl font-bold tracking-tight">AC Hub</h1>
-        <p className="text-sm opacity-60 mt-1">Le tue app, in un unico posto</p>
+        <img
+          src="/icons/ac-hub-full-logo-transparent.png"
+          alt="AC Hub"
+          className="w-40 mx-auto"
+        />
+        <p className="text-sm text-white opacity-80 mt-2">Le tue app, in un unico posto</p>
       </header>
 
       <div className="w-full max-w-md flex flex-col gap-5">
@@ -39,14 +41,12 @@ export default function Hub() {
           title="AC UP"
           subtitle="Nutrizione e piano pasti"
           logo="/icons/ac-up-logo-transparent.png"
-          accent="text-orange-400" // corallo, coerente col design esistente
         />
         <AppCard
           to="/ac-home"
           title="AC Home"
           subtitle="Spese casa, auto e scooter"
           logo="/icons/ac-home-logo-transparent.png"
-          accent="text-sky-400" // accento distintivo per AC Home
         />
       </div>
     </div>
