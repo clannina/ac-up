@@ -6,16 +6,16 @@ function AppCard({ to, title, subtitle, logo }) {
   return (
     <Link
       to={to}
-      className={`${GLASS} group relative flex flex-col justify-between p-6 rounded-3xl transition-transform duration-200 hover:-translate-y-1 active:scale-[0.98]`}
+      className={`${GLASS} group relative flex flex-col justify-between p-4 rounded-3xl transition-transform duration-200 hover:-translate-y-1 active:scale-[0.98]`}
     >
       <div className="flex items-start justify-between">
-        <img src={logo} alt={title} className="w-28 h-28" />
+        <img src={logo} alt={title} className="w-20 h-20" />
         <span className="flex items-center gap-1 text-xs font-mono uppercase tracking-wider text-black opacity-80 group-hover:opacity-100 transition-opacity">
           Apri
           <span className="text-lg font-bold">→</span>
         </span>
       </div>
-      <div className="mt-8">
+      <div className="mt-4">
         <h2 className="text-2xl font-semibold text-black">{title}</h2>
         <p className="text-sm opacity-70 mt-1 text-black">{subtitle}</p>
       </div>
@@ -25,17 +25,17 @@ function AppCard({ to, title, subtitle, logo }) {
 
 export default function Hub() {
   return (
-    <div className="bg-gradient-to-br from-[#0f6e73] to-[#f2b705] min-h-screen flex flex-col items-center px-5 py-12">
-      <header className="text-center mb-10">
+    <div className="bg-gradient-to-b from-[#0f6e73] via-[#f2f2f0] to-[#f2b705] min-h-screen flex flex-col items-center px-5 py-6">
+      <header className="text-center mb-4">
         <img
           src="/icons/ac-hub-full-logo-transparent.png"
           alt="AC Hub"
-          className="w-40 mx-auto"
+          className="w-24 mx-auto"
         />
-        <p className="text-sm text-white opacity-80 mt-2">Le tue app, in un unico posto</p>
+        <p className="text-sm text-white opacity-90 mt-1">Le tue app, in un unico posto</p>
       </header>
 
-      <div className="w-full max-w-md flex flex-col gap-5">
+      <div className="w-full max-w-md flex flex-col gap-4">
         <AppCard
           to="/ac-up"
           title="AC UP"
