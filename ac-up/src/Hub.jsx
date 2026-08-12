@@ -25,14 +25,13 @@ function AppCard({ to, title, subtitle, logo }) {
 
 export default function Hub() {
   return (
-    <div className="bg-gradient-to-b from-[#0f6e73] via-[#f2f2f0] to-[#f2b705] min-h-screen flex flex-col items-center px-5 py-6">
-      <header className="text-center mb-4">
+    <div className="bg-gradient-to-b from-[#2dd4bf] via-[#f2f2f0] to-[#f2b705] min-h-screen flex flex-col items-center px-5 py-3">
+      <header className="text-center mb-2">
         <img
           src="/icons/ac-hub-full-logo-transparent.png"
           alt="AC Hub"
-          className="w-24 mx-auto"
+          className="w-20 mx-auto"
         />
-        <p className="text-sm text-white opacity-90 mt-1">Le tue app, in un unico posto</p>
       </header>
 
       <div className="w-full max-w-md flex flex-col gap-4">
