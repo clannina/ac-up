@@ -25,7 +25,7 @@ function AppCard({ to, title, subtitle, logo }) {
 
 export default function Hub() {
   return (
-    <div className="bg-gradient-to-b from-[#2dd4bf] via-[#f2f2f0] to-[#f2b705] min-h-screen flex flex-col items-center px-5 py-3">
+    <div className="bg-gradient-to-b from-[#14b8a6] via-[#f2f2f0] to-[#f2b705] min-h-screen flex flex-col items-center px-5 py-3">
       <header className="text-center mb-2">
         <img
           src="/icons/ac-hub-full-logo-transparent.png"
