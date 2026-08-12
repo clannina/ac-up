@@ -40,9 +40,13 @@ export default function Login() {
       <PageBackground />
 
       <div className={`${GLASS} rounded-[28px] p-8 w-full max-w-sm relative`}>
-        <h1 className="text-2xl font-bold mb-1 text-white">AC UP</h1>
-        <p className="text-sm mb-7 text-white/70">
-          {mode === "signin" ? "Accedi al tuo piano alimentare." : "Crea il tuo account."}
+        <img
+          src="/icons/ac-hub-full-logo-transparent.png"
+          alt="AC Hub"
+          className="w-16 mx-auto mb-4"
+        />
+        <p className="text-sm mb-7 text-white/70 text-center">
+          {mode === "signin" ? "Accedi per continuare." : "Crea il tuo account."}
         </p>
 
         <form onSubmit={submit} className="space-y-4">
