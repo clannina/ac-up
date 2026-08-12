@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
+import { Home as HomeIcon, User } from "lucide-react";
 
 // Header condiviso per tutte le pagine di AC UP:
-// pittogramma + "AC UP" a sinistra, icona AC Home a destra per passare all'altra app.
+// pittogramma + "AC UP" a sinistra, a destra: icona AC Home (switch app), Home, Profilo.
 export default function AcUpHeader() {
   return (
     <div className="flex items-center justify-between mb-4">
@@ -10,9 +11,17 @@ export default function AcUpHeader() {
         <h1 className="font-display text-2xl" style={{ color: "#fff" }}>AC UP</h1>
       </div>
 
-      <Link to="/ac-home" title="Vai a AC Home">
-        <img src="/icons/ac-home-logo-transparent.png" alt="AC Home" className="w-7 h-7 opacity-90" />
-      </Link>
+      <div className="flex items-center gap-4">
+        <Link to="/ac-home" title="Vai a AC Home">
+          <img src="/icons/ac-home-logo-transparent.png" alt="AC Home" className="w-7 h-7 opacity-90" />
+        </Link>
+        <Link to="/ac-up" title="Home" className="text-white">
+          <HomeIcon size={22} />
+        </Link>
+        <Link to="/profilo" title="Profilo" className="text-white">
+          <User size={22} />
+        </Link>
+      </div>
     </div>
   );
 }
