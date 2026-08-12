@@ -405,7 +405,7 @@ export default function AcHomeSpese() {
                 borderLeft: s.condivisa && !saldato ? "4px solid #ffcf5c" : undefined,
               }}
             >
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col gap-2">
                 <div>
                   <p className="text-sm font-medium" style={{ color: "#fff" }}>
                     {s.ac_home_categorie?.nome || "—"} {s.ricorrente_id && <span className="text-xs opacity-70">· ricorrente</span>} {s.condivisa && <span className="text-xs opacity-70">· condivisa</span>}
@@ -414,14 +414,16 @@ export default function AcHomeSpese() {
                     {s.data} {s.persona ? `· pagato da ${s.persona}` : ""} {s.nota ? `· ${s.nota}` : ""}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between">
                   <p className="font-mono-num font-semibold" style={{ color: "#fff" }}>€ {Number(s.importo).toFixed(2)}</p>
-                  <button onClick={() => handleModifica(s)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
-                    Modifica
-                  </button>
-                  <button onClick={() => handleElimina(s.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}>
-                    Elimina
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => handleModifica(s)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                      Modifica
+                    </button>
+                    <button onClick={() => handleElimina(s.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}>
+                      Elimina
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -497,7 +499,8 @@ export default function AcHomeSpese() {
             </div>
             <div className="flex flex-col gap-2">
               {gruppoMese.spese.map((s) => (
-                <div key={s.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`}>
+                <div key={s.id} className={`${GLASS} rounded-2xl px-4 py-3`}>
+                <div className="flex flex-col gap-2">
                   <div>
                     <p className="text-sm font-medium" style={{ color: "#fff" }}>
                       {s.ac_home_categorie?.nome || "—"} {s.condivisa && <span className="text-xs opacity-70">· condivisa</span>}
@@ -506,15 +509,18 @@ export default function AcHomeSpese() {
                       {s.data} {s.persona ? `· ${s.persona}` : ""} {s.nota ? `· ${s.nota}` : ""}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between">
                     <p className="font-mono-num font-semibold" style={{ color: "#fff" }}>€ {Number(s.importo).toFixed(2)}</p>
-                    <button onClick={() => handleModifica(s)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
-                      Modifica
-                    </button>
-                    <button onClick={() => handleElimina(s.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}>
-                      Elimina
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => handleModifica(s)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                        Modifica
+                      </button>
+                      <button onClick={() => handleElimina(s.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}>
+                        Elimina
+                      </button>
+                    </div>
                   </div>
+                </div>
                 </div>
               ))}
             </div>
