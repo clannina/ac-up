@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Home as HomeIcon, Car, Bike, CalendarClock, Wallet } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
+import { useAuth } from "../../lib/AuthContext.jsx";
 import AcHomeHeader from "../../components/AcHomeHeader.jsx";
 import {
   getSpese,
@@ -31,10 +32,27 @@ function giorniMancanti(dataScadenza) {
   return Math.round((d - oggiZero) / (1000 * 60 * 60 * 24));
 }
 
+// Stessa logica di saluto/data usata in AC UP (Home.jsx), per coerenza tra le due app.
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Buongiorno";
+  if (h < 18) return "Buon pomeriggio";
+  return "Buonasera";
+}
+
+function todayLabel() {
+  const d = new Date();
+  const s = d.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 export default function AcHomeDashboard() {
+  const { session, profile } = useAuth();
   const [totali, setTotali] = useState({ casa: 0, auto: 0, scooter: 0 });
   const [scadenze, setScadenze] = useState([]);
   const [residuo, setResiduo] = useState(0);
+
+  const displayName = profile?.display_name || session?.user?.email?.split("@")[0] || "";
 
   useEffect(() => {
     // Genera (se non gia' fatto questo mese) le spese e le entrate ricorrenti, poi carica tutto.
@@ -80,6 +98,16 @@ export default function AcHomeDashboard() {
       style={{ background: BACKGROUND }}
     >
       <AcHomeHeader />
+
+      {/* Data + saluto, stesso pattern di AC UP */}
+      <div className="mb-6">
+        <p className="font-mono-num text-xs uppercase tracking-wider mb-1" style={{ color: "rgba(255,255,255,0.7)" }}>
+          {todayLabel()}
+        </p>
+        <h1 className="text-4xl font-bold" style={{ color: "#fff" }}>
+          {greeting()}{displayName ? `, ${displayName}` : ""}
+        </h1>
+      </div>
 
       {/* Residuo mensile: entrate - spese */}
       <Link to="/ac-home/entrate" className={`${GLASS} block rounded-3xl p-4 mb-5`}>
