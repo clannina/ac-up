@@ -1,1 +1,29 @@
-
+{
+  "name": "AC Hub",
+  "short_name": "AC Hub",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f2f2f0",
+  "theme_color": "#0f6e73",
+  "icons": [
+    {
+      "src": "/icons/ac-hub-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/ac-hub-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/ac-hub-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
