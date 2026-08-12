@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Home as HomeIcon, Car, Bike, CalendarClock, Wallet, HeartPulse } from "lucide-react";
+import { Home as HomeIcon, Car, Bike, CalendarClock, Wallet } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
+import AcHomeHeader from "../../components/AcHomeHeader.jsx";
 import {
   getSpese,
   getScadenze,
@@ -14,7 +15,6 @@ const GRUPPI = [
   { id: "casa", label: "Casa", icon: HomeIcon },
   { id: "auto", label: "Auto", icon: Car },
   { id: "scooter", label: "Scooter", icon: Bike },
-  { id: "mediche", label: "Spese mediche", icon: HeartPulse },
 ];
 
 const oggi = new Date();
@@ -32,7 +32,7 @@ function giorniMancanti(dataScadenza) {
 }
 
 export default function AcHomeDashboard() {
-  const [totali, setTotali] = useState({ casa: 0, auto: 0, scooter: 0, mediche: 0 });
+  const [totali, setTotali] = useState({ casa: 0, auto: 0, scooter: 0 });
   const [scadenze, setScadenze] = useState([]);
   const [residuo, setResiduo] = useState(0);
 
@@ -52,9 +52,7 @@ export default function AcHomeDashboard() {
     const entrate = await getEntrate(MESE_CORRENTE, ANNO_CORRENTE);
     const totaleEntrate = entrate.reduce((tot, e) => tot + Number(e.importo), 0);
     const tutteLeSpese = await Promise.all(GRUPPI.map((g) => getSpese({ mese: MESE_CORRENTE, anno: ANNO_CORRENTE, gruppo: g.id })));
-    // Il residuo e' quello di Anna: le spese di Vanna non incidono.
-    const soloAnna = tutteLeSpese.flat().filter((s) => s.persona !== "Vanna");
-    const totaleSpese = soloAnna.reduce((tot, s) => tot + Number(s.importo), 0);
+    const totaleSpese = tutteLeSpese.flat().reduce((tot, s) => tot + Number(s.importo), 0);
     setResiduo(totaleEntrate - totaleSpese);
   }
 
@@ -81,13 +79,13 @@ export default function AcHomeDashboard() {
       className="min-h-screen pb-28 px-4 pt-6"
       style={{ background: BACKGROUND }}
     >
-      <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>AC Home</h1>
+      <AcHomeHeader />
 
       {/* Residuo mensile: entrate - spese */}
       <Link to="/ac-home/entrate" className={`${GLASS} block rounded-3xl p-4 mb-5`}>
         <div className="flex items-center gap-2 mb-1">
           <Wallet size={18} color="#fff" />
-          <p className="font-display text-sm" style={{ color: "#fff" }}>Residuo di Anna questo mese</p>
+          <p className="font-display text-sm" style={{ color: "#fff" }}>Residuo di questo mese</p>
         </div>
         <p className="font-mono-num text-3xl" style={{ color: residuo >= 0 ? "#fff" : "#ffd0d0" }}>
           € {residuo.toFixed(2)}
