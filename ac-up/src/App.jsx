@@ -19,6 +19,7 @@ import AcPepeDashboard from "./pages/acpepe/AcPepeDashboard.jsx";
 import AcPepeRespiri from "./pages/acpepe/AcPepeRespiri.jsx";
 import AcPepeTerapie from "./pages/acpepe/AcPepeTerapie.jsx";
 import AcPepeScadenze from "./pages/acpepe/AcPepeScadenze.jsx";
+import AcPepeReferti from "./pages/acpepe/AcPepeReferti.jsx";
 export default function App() {
   return (
     <Routes>
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="ac-pepe/respiri" element={<AcPepeRespiri />} />
         <Route path="ac-pepe/terapie" element={<AcPepeTerapie />} />
         <Route path="ac-pepe/scadenze" element={<AcPepeScadenze />} />
+        <Route path="ac-pepe/referti" element={<AcPepeReferti />} />
       </Route>
     </Routes>
   );
