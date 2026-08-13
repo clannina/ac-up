@@ -36,12 +36,6 @@ export default function Hub() {
 
       <div className="w-full max-w-md flex flex-col gap-4">
         <AppCard
-          to="/ac-up"
-          title="AC UP"
-          subtitle="Nutrizione e piano pasti"
-          logo="/icons/ac-up-logo-transparent.png"
-        />
-        <AppCard
           to="/ac-home"
           title="AC Home"
           subtitle="Spese casa, auto e scooter"
@@ -52,6 +46,12 @@ export default function Hub() {
           title="AcPepe"
           subtitle="Salute e terapie di Pepe"
           logo="/icons/ac-pepe-logo-transparent.png"
+        />
+        <AppCard
+          to="/ac-up"
+          title="AC UP"
+          subtitle="Nutrizione e piano pasti"
+          logo="/icons/ac-up-logo-transparent.png"
         />
       </div>
     </div>

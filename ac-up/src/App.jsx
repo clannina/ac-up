@@ -15,13 +15,15 @@ import AcHomeScadenze from "./pages/achome/AcHomeScadenze.jsx";
 import AcHomeProfilo from "./pages/achome/AcHomeProfilo.jsx";
 import AcHomeEntrate from "./pages/achome/AcHomeEntrate.jsx";
 import AcHomeStorico from "./pages/achome/AcHomeStorico.jsx";
-
+import AcPepeDashboard from "./pages/acpepe/AcPepeDashboard.jsx";
+import AcPepeRespiri from "./pages/acpepe/AcPepeRespiri.jsx";
+import AcPepeTerapie from "./pages/acpepe/AcPepeTerapie.jsx";
+import AcPepeScadenze from "./pages/acpepe/AcPepeScadenze.jsx";
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Hub />} />
-
-      {/* Tutte le route, sia AC UP che AC Home, passano dallo stesso gate di login */}
+      {/* Tutte le route, sia AC UP che AC Home che AcPepe, passano dallo stesso gate di login */}
       <Route element={<AuthGate />}>
         <Route path="ac-up" element={<Home />} />
         <Route path="menu" element={<Menu />} />
@@ -29,7 +31,6 @@ export default function App() {
         <Route path="spesa" element={<Spesa />} />
         <Route path="salute" element={<Salute />} />
         <Route path="profilo" element={<Profilo />} />
-
         <Route path="ac-home" element={<AcHomeDashboard />} />
         <Route path="ac-home/spese" element={<AcHomeSpese />} />
         <Route path="ac-home/budget" element={<AcHomeBudget />} />
@@ -38,6 +39,10 @@ export default function App() {
         <Route path="ac-home/profilo" element={<AcHomeProfilo />} />
         <Route path="ac-home/entrate" element={<AcHomeEntrate />} />
         <Route path="ac-home/storico" element={<AcHomeStorico />} />
+        <Route path="ac-pepe" element={<AcPepeDashboard />} />
+        <Route path="ac-pepe/respiri" element={<AcPepeRespiri />} />
+        <Route path="ac-pepe/terapie" element={<AcPepeTerapie />} />
+        <Route path="ac-pepe/scadenze" element={<AcPepeScadenze />} />
       </Route>
     </Routes>
   );
