@@ -202,3 +202,19 @@ export async function eliminaReferto(id, filePercorso) {
   const { error } = await supabase.from("ac_pepe_referti").delete().eq("id", id);
   if (error) throw error;
 }
+
+// Variante senza upload: salva solo un link esterno (es. Google Drive condiviso).
+export async function creaRefertoLink({ titolo, tipo, data, note, link }) {
+  const { data: userData } = await supabase.auth.getUser();
+  const { error } = await supabase.from("ac_pepe_referti").insert({
+    profile_id: userData.user.id,
+    titolo,
+    tipo: tipo || "altro",
+    data,
+    file_url: link,
+    file_nome: null,
+    file_percorso: null,
+    note: note || null,
+  });
+  if (error) throw error;
+}
