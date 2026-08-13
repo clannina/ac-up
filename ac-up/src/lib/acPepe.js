@@ -153,3 +153,52 @@ export async function eliminaScadenza(id) {
   const { error } = await supabase.from("ac_pepe_scadenze").delete().eq("id", id);
   if (error) throw error;
 }
+
+// ============================================
+// REFERTI (documenti/allegati)
+// ============================================
+
+export async function getReferti() {
+  const { data, error } = await supabase
+    .from("ac_pepe_referti")
+    .select("*")
+    .order("data", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+// Carica il file su Storage e poi salva la riga con il link pubblico.
+export async function creaReferto({ titolo, tipo, data, note, file }) {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user.id;
+
+  const estensione = file.name.split(".").pop();
+  const percorso = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${estensione}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("ac-pepe-referti")
+    .upload(percorso, file);
+  if (uploadError) throw uploadError;
+
+  const { data: pubUrl } = supabase.storage.from("ac-pepe-referti").getPublicUrl(percorso);
+
+  const { error } = await supabase.from("ac_pepe_referti").insert({
+    profile_id: userId,
+    titolo,
+    tipo: tipo || "altro",
+    data,
+    file_url: pubUrl.publicUrl,
+    file_nome: file.name,
+    file_percorso: percorso,
+    note: note || null,
+  });
+  if (error) throw error;
+}
+
+export async function eliminaReferto(id, filePercorso) {
+  if (filePercorso) {
+    await supabase.storage.from("ac-pepe-referti").remove([filePercorso]);
+  }
+  const { error } = await supabase.from("ac_pepe_referti").delete().eq("id", id);
+  if (error) throw error;
+}
