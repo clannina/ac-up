@@ -12,7 +12,7 @@ import {
   segnaSomministrazione,
 } from "../../lib/acPepe";
 
-const BACKGROUND = "linear-gradient(180deg, #E0526F 0%, #B04A6B 55%, #5FA8DC 100%)";
+const BACKGROUND = "linear-gradient(180deg, #F5C518 0%, #E9311A 100%)";
 const VUOTO = { nome: "", dose: "", orario: "", note: "" };
 
 function oggiISO() {

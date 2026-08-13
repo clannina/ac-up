@@ -5,8 +5,8 @@ import { T, GLASS } from "../../lib/theme";
 import AcPepeHeader from "../../components/AcPepeHeader.jsx";
 import { getRespiri, creaRespiro, eliminaRespiro, statoRespiro } from "../../lib/acPepe";
 
-const BACKGROUND = "linear-gradient(180deg, #E0526F 0%, #B04A6B 55%, #5FA8DC 100%)";
-const DURATA_CONTEGGIO = 30; // secondi
+const BACKGROUND = "linear-gradient(180deg, #F5C518 0%, #E9311A 100%)";
+const DURATA_CONTEGGIO = 60; // secondi
 
 export default function AcPepeRespiri() {
   const [storico, setStorico] = useState([]);
