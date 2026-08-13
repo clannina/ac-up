@@ -18,6 +18,10 @@ export default function AcPepeRespiri() {
   const [secondiRimasti, setSecondiRimasti] = useState(DURATA_CONTEGGIO);
   const [risultato, setRisultato] = useState(null); // { bpm, conteggio, durata }
 
+  // Stato dell'inserimento manuale
+  const [modalitaManuale, setModalitaManuale] = useState(false);
+  const [bpmManuale, setBpmManuale] = useState("");
+
   const intervalRef = useRef(null);
   const startTimeRef = useRef(null);
 
@@ -82,6 +86,20 @@ export default function AcPepeRespiri() {
     caricaStorico();
   }
 
+  async function salvaManuale() {
+    const bpm = parseInt(bpmManuale, 10);
+    if (!bpm || bpm <= 0) return;
+    await creaRespiro({
+      bpm,
+      durata_secondi: 60,
+      conteggio_respiri: bpm,
+      nota: "inserito manualmente",
+    });
+    setBpmManuale("");
+    setModalitaManuale(false);
+    caricaStorico();
+  }
+
   async function handleElimina(id) {
     await eliminaRespiro(id);
     caricaStorico();
@@ -127,7 +145,7 @@ export default function AcPepeRespiri() {
 
       {/* Contatore a tocco */}
       <div className={`${GLASS} rounded-3xl p-6 mb-5 text-center`}>
-        {!contando && !risultato && (
+        {!contando && !risultato && !modalitaManuale && (
           <>
             <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.85)" }}>
               Conta i respiri di Pepe mentre dorme o è tranquillo. Premi Avvia, poi tocca il cerchio ad ogni respiro per {DURATA_CONTEGGIO} secondi.
@@ -139,6 +157,48 @@ export default function AcPepeRespiri() {
             >
               <Play size={18} /> Avvia conteggio
             </button>
+            <button
+              onClick={() => setModalitaManuale(true)}
+              className="mx-auto mt-3 block text-sm underline"
+              style={{ color: "rgba(255,255,255,0.85)" }}
+            >
+              Inserisci manualmente
+            </button>
+          </>
+        )}
+
+        {modalitaManuale && (
+          <>
+            <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.85)" }}>
+              Hai già contato i respiri? Inserisci direttamente il valore in respiri al minuto.
+            </p>
+            <input
+              type="number"
+              inputMode="numeric"
+              value={bpmManuale}
+              onChange={(e) => setBpmManuale(e.target.value)}
+              placeholder="es. 24"
+              className="w-32 mx-auto block text-center rounded-xl px-3 py-2.5 text-2xl font-mono-num mb-4"
+              style={{ background: "#fff", color: T.forest }}
+              autoFocus
+            />
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => { setModalitaManuale(false); setBpmManuale(""); }}
+                className="px-4 py-2.5 rounded-2xl text-sm font-display"
+                style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}
+              >
+                Annulla
+              </button>
+              <button
+                onClick={salvaManuale}
+                disabled={!bpmManuale}
+                className="px-5 py-2.5 rounded-2xl text-sm font-display disabled:opacity-40"
+                style={{ background: "#fff", color: T.forest }}
+              >
+                Salva misurazione
+              </button>
+            </div>
           </>
         )}
 
