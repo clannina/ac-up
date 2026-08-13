@@ -47,6 +47,12 @@ export default function Hub() {
           subtitle="Spese casa, auto e scooter"
           logo="/icons/ac-home-logo-transparent.png"
         />
+        <AppCard
+          to="/ac-pepe"
+          title="AcPepe"
+          subtitle="Salute e terapie di Pepe"
+          logo="/icons/ac-pepe-logo-transparent.png"
+        />
       </div>
     </div>
   );
