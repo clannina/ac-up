@@ -62,15 +62,63 @@ export async function getTerapie(soloAttive = true) {
   return data ?? [];
 }
 
-export async function creaTerapia({ nome, dose, orario, note }) {
+export async function creaTerapia({ nome, dose, orario, note, ricettaFile }) {
   const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user.id;
+
+  let ricetta_url = null;
+  let ricetta_percorso = null;
+  if (ricettaFile) {
+    const caricata = await caricaFileRicetta(userId, ricettaFile);
+    ricetta_url = caricata.url;
+    ricetta_percorso = caricata.percorso;
+  }
+
   const { error } = await supabase.from("ac_pepe_terapie").insert({
-    profile_id: userData.user.id,
+    profile_id: userId,
     nome,
     dose,
     orario,
     note: note || null,
+    ricetta_url,
+    ricetta_percorso,
   });
+  if (error) throw error;
+}
+
+// Carica un file di ricetta nello stesso bucket usato per i referti.
+async function caricaFileRicetta(userId, file) {
+  const estensione = file.name.split(".").pop();
+  const percorso = `${userId}/ricette/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${estensione}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("ac-pepe-referti")
+    .upload(percorso, file);
+  if (uploadError) throw uploadError;
+
+  const { data: pubUrl } = supabase.storage.from("ac-pepe-referti").getPublicUrl(percorso);
+  return { url: pubUrl.publicUrl, percorso };
+}
+
+// Aggiunge o sostituisce la ricetta allegata a una terapia già esistente.
+export async function caricaRicettaTerapia(terapiaId, file) {
+  const { data: userData } = await supabase.auth.getUser();
+  const { url, percorso } = await caricaFileRicetta(userData.user.id, file);
+  const { error } = await supabase
+    .from("ac_pepe_terapie")
+    .update({ ricetta_url: url, ricetta_percorso: percorso })
+    .eq("id", terapiaId);
+  if (error) throw error;
+}
+
+export async function rimuoviRicettaTerapia(terapiaId, ricettaPercorso) {
+  if (ricettaPercorso) {
+    await supabase.storage.from("ac-pepe-referti").remove([ricettaPercorso]);
+  }
+  const { error } = await supabase
+    .from("ac_pepe_terapie")
+    .update({ ricetta_url: null, ricetta_percorso: null })
+    .eq("id", terapiaId);
   if (error) throw error;
 }
 
