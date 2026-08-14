@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, Pencil, Trash2, Pause, Play } from "lucide-react";
+import { Check, Pencil, Trash2, Pause, Play, FileText, Upload, X } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import AcPepeHeader from "../../components/AcPepeHeader.jsx";
 import {
@@ -10,6 +10,8 @@ import {
   eliminaTerapia,
   getSomministrazioniData,
   segnaSomministrazione,
+  caricaRicettaTerapia,
+  rimuoviRicettaTerapia,
 } from "../../lib/acPepe";
 
 const BACKGROUND = "linear-gradient(180deg, #F5C518 0%, #E9311A 100%)";
@@ -23,7 +25,9 @@ export default function AcPepeTerapie() {
   const [terapie, setTerapie] = useState([]);
   const [fatte, setFatte] = useState({});
   const [nuova, setNuova] = useState(VUOTO);
+  const [ricettaFile, setRicettaFile] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [caricandoRicetta, setCaricandoRicetta] = useState(false);
 
   useEffect(() => {
     caricaTutto();
@@ -49,17 +53,32 @@ export default function AcPepeTerapie() {
   function annullaModifica() {
     setEditingId(null);
     setNuova(VUOTO);
+    setRicettaFile(null);
   }
 
   async function handleNuova() {
     if (!nuova.nome.trim()) return;
-    if (editingId) {
-      await aggiornaTerapia(editingId, nuova);
-      setEditingId(null);
-    } else {
-      await creaTerapia(nuova);
+    setCaricandoRicetta(true);
+    try {
+      if (editingId) {
+        await aggiornaTerapia(editingId, nuova);
+        if (ricettaFile) {
+          await caricaRicettaTerapia(editingId, ricettaFile);
+        }
+        setEditingId(null);
+      } else {
+        await creaTerapia({ ...nuova, ricettaFile });
+      }
+      setNuova(VUOTO);
+      setRicettaFile(null);
+      caricaTutto();
+    } finally {
+      setCaricandoRicetta(false);
     }
-    setNuova(VUOTO);
+  }
+
+  async function handleRimuoviRicetta(t) {
+    await rimuoviRicettaTerapia(t.id, t.ricetta_percorso);
     caricaTutto();
   }
 
@@ -171,8 +190,32 @@ export default function AcPepeTerapie() {
           style={{ background: "#fff" }}
         />
 
-        <button onClick={handleNuova} className="w-full py-2.5 rounded-xl font-display text-sm" style={{ background: T.forest, color: "#fff" }}>
-          {editingId ? "Aggiorna terapia" : "Aggiungi terapia"}
+        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Ricetta (opzionale)</label>
+        <input
+          type="file"
+          accept="application/pdf,image/*"
+          onChange={(e) => setRicettaFile(e.target.files?.[0] || null)}
+          className="w-full rounded-xl px-3 py-2 text-xs mb-1"
+          style={{ background: "#fff" }}
+        />
+        {editingId && !ricettaFile && (
+          <p className="text-[11px] mb-3" style={{ color: "rgba(255,255,255,0.6)" }}>
+            Seleziona un file solo se vuoi sostituire la ricetta già caricata.
+          </p>
+        )}
+        {!editingId && (
+          <p className="text-[11px] mb-3" style={{ color: "rgba(255,255,255,0.6)" }}>
+            Foto o PDF della prescrizione del veterinario.
+          </p>
+        )}
+
+        <button
+          onClick={handleNuova}
+          disabled={caricandoRicetta}
+          className="w-full py-2.5 rounded-xl font-display text-sm disabled:opacity-60"
+          style={{ background: T.forest, color: "#fff" }}
+        >
+          {caricandoRicetta ? "Salvo..." : editingId ? "Aggiorna terapia" : "Aggiungi terapia"}
         </button>
       </div>
 
@@ -180,22 +223,44 @@ export default function AcPepeTerapie() {
       <h2 className="font-display text-sm mb-2" style={{ color: "#fff" }}>Tutte le terapie</h2>
       <div className="flex flex-col gap-2">
         {terapieAttive.map((t) => (
-          <div key={t.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`} style={{ outline: editingId === t.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
-            <div>
-              <p className="text-sm font-medium" style={{ color: "#fff" }}>{t.nome} {t.dose && `· ${t.dose}`}</p>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>{t.orario ? `ore ${t.orario}` : "senza orario"}{t.note ? ` · ${t.note}` : ""}</p>
+          <div key={t.id} className={`${GLASS} rounded-2xl px-4 py-3`} style={{ outline: editingId === t.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm font-medium" style={{ color: "#fff" }}>{t.nome} {t.dose && `· ${t.dose}`}</p>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>{t.orario ? `ore ${t.orario}` : "senza orario"}{t.note ? ` · ${t.note}` : ""}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => handleModifica(t)} className="p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.2)" }}>
+                  <Pencil size={15} color="#fff" />
+                </button>
+                <button onClick={() => handleToggleAttiva(t)} className="p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.2)" }}>
+                  <Pause size={15} color="#fff" />
+                </button>
+                <button onClick={() => handleElimina(t.id)} className="p-2 rounded-lg" style={{ background: "rgba(224,82,82,0.35)" }}>
+                  <Trash2 size={15} color="#fff" />
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => handleModifica(t)} className="p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.2)" }}>
-                <Pencil size={15} color="#fff" />
-              </button>
-              <button onClick={() => handleToggleAttiva(t)} className="p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.2)" }}>
-                <Pause size={15} color="#fff" />
-              </button>
-              <button onClick={() => handleElimina(t.id)} className="p-2 rounded-lg" style={{ background: "rgba(224,82,82,0.35)" }}>
-                <Trash2 size={15} color="#fff" />
-              </button>
-            </div>
+            {t.ricetta_url && (
+              <div className="flex items-center gap-2 mt-2 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.15)" }}>
+                <a
+                  href={t.ricetta_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg"
+                  style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}
+                >
+                  <FileText size={13} /> Vedi ricetta
+                </a>
+                <button
+                  onClick={() => handleRimuoviRicetta(t)}
+                  className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg"
+                  style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}
+                >
+                  <X size={13} /> Rimuovi
+                </button>
+              </div>
+            )}
           </div>
         ))}
 
