@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Home as HomeIcon, User } from "lucide-react";
 
 // Header condiviso per tutte le pagine di AC Home:
-// pittogramma + "AC Home" a sinistra, scorciatoie (AC UP, Home, Profilo) a destra.
+// pittogramma + "AC Home" a sinistra, scorciatoie (AC UP, AcPepe, Home, Profilo) a destra.
 export default function AcHomeHeader() {
   return (
     <div className="flex items-center justify-between mb-4">
@@ -14,6 +14,9 @@ export default function AcHomeHeader() {
       <div className="flex items-center gap-4">
         <Link to="/ac-up" title="Vai a AC UP">
           <img src="/icons/ac-up-logo-transparent.png" alt="AC UP" className="w-7 h-7 opacity-90" />
+        </Link>
+        <Link to="/ac-pepe" title="Vai a AcPepe">
+          <img src="/icons/ac-pepe-logo-transparent.png" alt="AcPepe" className="w-7 h-7 opacity-90" />
         </Link>
         <Link to="/ac-home" title="Home" className="text-white">
           <HomeIcon size={22} />
