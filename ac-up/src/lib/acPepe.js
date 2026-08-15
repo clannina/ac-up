@@ -62,7 +62,7 @@ export async function getTerapie(soloAttive = true) {
   return data ?? [];
 }
 
-export async function creaTerapia({ nome, dose, orario, note, ricettaFile }) {
+export async function creaTerapia({ nome, dose, orari, note, ricettaFile }) {
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData.user.id;
 
@@ -78,7 +78,7 @@ export async function creaTerapia({ nome, dose, orario, note, ricettaFile }) {
     profile_id: userId,
     nome,
     dose,
-    orario,
+    orari: orari && orari.length > 0 ? orari : [],
     note: note || null,
     ricetta_url,
     ricetta_percorso,
@@ -150,7 +150,7 @@ export async function getSomministrazioniData(data) {
   return righe ?? [];
 }
 
-export async function segnaSomministrazione(terapia_id, data, fatto) {
+export async function segnaSomministrazione(terapia_id, data, orario, fatto) {
   const { data: userData } = await supabase.auth.getUser();
   const { error } = await supabase
     .from("ac_pepe_somministrazioni")
@@ -159,10 +159,11 @@ export async function segnaSomministrazione(terapia_id, data, fatto) {
         profile_id: userData.user.id,
         terapia_id,
         data,
+        orario: orario || "",
         fatto,
         ora_somministrazione: fatto ? new Date().toISOString() : null,
       },
-      { onConflict: "terapia_id,data" }
+      { onConflict: "terapia_id,data,orario" }
     );
   if (error) throw error;
 }
