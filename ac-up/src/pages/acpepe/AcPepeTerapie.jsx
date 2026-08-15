@@ -15,21 +15,10 @@ import {
 } from "../../lib/acPepe";
 
 const BACKGROUND = "linear-gradient(180deg, #F5C518 0%, #E9311A 100%)";
-const VUOTO = { nome: "", dose: "", orariTesto: "", note: "" };
+const VUOTO = { nome: "", dose: "", orario1: "", orario2: "", orario3: "", note: "" };
 
 function oggiISO() {
   return new Date().toISOString().slice(0, 10);
-}
-
-// "08:00, 14:00, 20:00" -> ["08:00","14:00","20:00"], ordinati e senza duplicati/vuoti
-function parseOrari(testo) {
-  const set = new Set(
-    testo
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean)
-  );
-  return Array.from(set).sort();
 }
 
 export default function AcPepeTerapie() {
@@ -57,10 +46,13 @@ export default function AcPepeTerapie() {
 
   function handleModifica(t) {
     setEditingId(t.id);
+    const orari = t.orari || [];
     setNuova({
       nome: t.nome,
       dose: t.dose || "",
-      orariTesto: (t.orari || []).join(", "),
+      orario1: orari[0] || "",
+      orario2: orari[1] || "",
+      orario3: orari[2] || "",
       note: t.note || "",
     });
     setRicettaFile(null);
@@ -75,7 +67,7 @@ export default function AcPepeTerapie() {
 
   async function handleNuova() {
     if (!nuova.nome.trim()) return;
-    const orari = parseOrari(nuova.orariTesto);
+    const orari = [nuova.orario1, nuova.orario2, nuova.orario3].filter(Boolean);
     const payload = { nome: nuova.nome, dose: nuova.dose, orari, note: nuova.note };
 
     setSalvando(true);
@@ -128,7 +120,7 @@ export default function AcPepeTerapie() {
       <AcPepeHeader />
       <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Terapie</h1>
 
-      {/* Checklist di oggi: una riga per ogni orario di ogni terapia attiva */}
+      {/* Checklist di oggi: una card per terapia, con gli orari affiancati dentro */}
       <h2 className="font-display text-sm mb-2" style={{ color: "#fff" }}>Da fare oggi</h2>
       <div className="flex flex-col gap-2 mb-6">
         {terapieAttive.length === 0 && (
@@ -136,35 +128,30 @@ export default function AcPepeTerapie() {
         )}
         {terapieAttive.map((t) => {
           const orari = t.orari && t.orari.length > 0 ? t.orari : [""]; // "" = senza orario specifico
-          return orari.map((orario) => {
-            const chiave = `${t.id}__${orario}`;
-            const fatto = !!fatte[chiave];
-            return (
-              <button
-                key={chiave}
-                onClick={() => handleSpunta(t.id, orario)}
-                className={`${GLASS} rounded-2xl px-4 py-3 flex items-center justify-between text-left transition`}
-                style={{ opacity: fatto ? 0.7 : 1 }}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-                    style={{ border: "1.5px solid rgba(255,255,255,0.6)", background: fatto ? "rgba(255,255,255,0.95)" : "transparent" }}
-                  >
-                    {fatto && <Check size={13} style={{ color: T.forest }} strokeWidth={3} />}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: "#fff", textDecoration: fatto ? "line-through" : "none" }}>
-                      {t.nome} {t.dose && `· ${t.dose}`}
-                    </p>
-                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
-                      {orario ? `ore ${orario}` : "orario non impostato"}
-                    </p>
-                  </div>
-                </div>
-              </button>
-            );
-          });
+          return (
+            <div key={t.id} className={`${GLASS} rounded-2xl px-4 py-3`}>
+              <p className="text-sm font-medium" style={{ color: "#fff" }}>
+                {t.nome} {t.dose && `· ${t.dose}`}
+              </p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {orari.map((orario) => {
+                  const chiave = `${t.id}__${orario}`;
+                  const fatto = !!fatte[chiave];
+                  return (
+                    <button
+                      key={chiave}
+                      onClick={() => handleSpunta(t.id, orario)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition"
+                      style={fatto ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+                    >
+                      {fatto && <Check size={13} strokeWidth={3} />}
+                      {orario || "senza orario"}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
         })}
       </div>
 
@@ -197,17 +184,32 @@ export default function AcPepeTerapie() {
           style={{ background: "#fff" }}
         />
 
-        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Orari (uno o più, separati da virgola)</label>
-        <input
-          value={nuova.orariTesto}
-          onChange={(e) => setNuova((prev) => ({ ...prev, orariTesto: e.target.value }))}
-          placeholder="es. 08:00, 14:00, 20:00"
-          className="w-full rounded-xl px-3 py-2 text-sm mb-1"
-          style={{ background: "#fff" }}
-        />
-        <p className="text-[11px] mb-3" style={{ color: "rgba(255,255,255,0.6)" }}>
-          Stessa dose più volte al giorno? Aggiungi tutti gli orari qui, senza creare terapie separate.
-        </p>
+        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>
+          Orari (fino a 3 volte al giorno, stessa dose)
+        </label>
+        <div className="flex gap-2 mb-3">
+          <input
+            type="time"
+            value={nuova.orario1}
+            onChange={(e) => setNuova((prev) => ({ ...prev, orario1: e.target.value }))}
+            className="flex-1 rounded-xl px-2 py-2 text-sm"
+            style={{ background: "#fff" }}
+          />
+          <input
+            type="time"
+            value={nuova.orario2}
+            onChange={(e) => setNuova((prev) => ({ ...prev, orario2: e.target.value }))}
+            className="flex-1 rounded-xl px-2 py-2 text-sm"
+            style={{ background: "#fff" }}
+          />
+          <input
+            type="time"
+            value={nuova.orario3}
+            onChange={(e) => setNuova((prev) => ({ ...prev, orario3: e.target.value }))}
+            className="flex-1 rounded-xl px-2 py-2 text-sm"
+            style={{ background: "#fff" }}
+          />
+        </div>
 
         <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Note (opzionale)</label>
         <input
