@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
-import { FileText, Upload, Trash2, ExternalLink, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { FileText, Upload, Trash2, ExternalLink, Loader2, Pencil, X } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import AcPepeHeader from "../../components/AcPepeHeader.jsx";
-import { getReferti, creaReferto, creaRefertoLink, eliminaReferto } from "../../lib/acPepe";
+import { getReferti, creaReferto, creaRefertoLink, aggiornaReferto, eliminaReferto } from "../../lib/acPepe";
 
 const BACKGROUND = "linear-gradient(180deg, #F5C518 0%, #E9311A 100%)";
 
-const TIPI = [
+const TIPI_BASE = [
   { id: "esami", label: "Esami" },
   { id: "ecocardiogramma", label: "Ecocardio" },
   { id: "radiografia", label: "Radiografia" },
@@ -24,6 +24,8 @@ export default function AcPepeReferti() {
   const [file, setFile] = useState(null);
   const [link, setLink] = useState("");
   const [modalitaOrigine, setModalitaOrigine] = useState("file"); // "file" | "link"
+  const [editingId, setEditingId] = useState(null);
+  const [editingPercorso, setEditingPercorso] = useState(null);
   const [caricando, setCaricando] = useState(false);
   const [errore, setErrore] = useState(null);
 
@@ -37,30 +39,61 @@ export default function AcPepeReferti() {
     setCaricato(true);
   }
 
+  // Categorie disponibili nel datalist: quelle base + tutte quelle già usate nei tuoi referti.
+  const tipiDisponibili = useMemo(() => {
+    const daiReferti = referti.map((r) => r.tipo).filter(Boolean);
+    const tuttiIds = new Set([...TIPI_BASE.map((t) => t.id), ...daiReferti]);
+    return Array.from(tuttiIds);
+  }, [referti]);
+
+  function labelTipo(tipoId) {
+    return TIPI_BASE.find((t) => t.id === tipoId)?.label || tipoId;
+  }
+
+  function handleModifica(r) {
+    setEditingId(r.id);
+    setEditingPercorso(r.file_percorso);
+    setNuovo({ titolo: r.titolo, tipo: r.tipo, data: r.data, note: r.note || "" });
+    setFile(null);
+    setLink("");
+    setModalitaOrigine("file");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function annullaModifica() {
+    setEditingId(null);
+    setEditingPercorso(null);
+    setNuovo(VUOTO);
+    setFile(null);
+    setLink("");
+    setErrore(null);
+  }
+
   async function handleCarica() {
     setErrore(null);
     if (!nuovo.titolo.trim()) {
       setErrore("Serve almeno un titolo.");
       return;
     }
-    if (modalitaOrigine === "file" && !file) {
+    if (!editingId && modalitaOrigine === "file" && !file) {
       setErrore("Seleziona un file.");
       return;
     }
-    if (modalitaOrigine === "link" && !link.trim()) {
+    if (!editingId && modalitaOrigine === "link" && !link.trim()) {
       setErrore("Incolla un link.");
       return;
     }
+
     setCaricando(true);
     try {
-      if (modalitaOrigine === "file") {
+      if (editingId) {
+        await aggiornaReferto(editingId, { ...nuovo, file, vecchioPercorso: editingPercorso });
+      } else if (modalitaOrigine === "file") {
         await creaReferto({ ...nuovo, file });
       } else {
         await creaRefertoLink({ ...nuovo, link: link.trim() });
       }
-      setNuovo(VUOTO);
-      setFile(null);
-      setLink("");
+      annullaModifica();
       caricaReferti();
     } catch (err) {
       setErrore(err.message);
@@ -70,18 +103,29 @@ export default function AcPepeReferti() {
 
   async function handleElimina(referto) {
     await eliminaReferto(referto.id, referto.file_percorso);
+    if (editingId === referto.id) annullaModifica();
     caricaReferti();
   }
 
   const filtrati = filtro === "tutti" ? referti : referti.filter((r) => r.tipo === filtro);
+  const tipiPresenti = useMemo(() => Array.from(new Set(referti.map((r) => r.tipo).filter(Boolean))), [referti]);
 
   return (
     <div className="min-h-screen pb-28 px-4 pt-6" style={{ background: BACKGROUND }}>
       <AcPepeHeader />
       <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Referti</h1>
 
-      {/* Form nuovo referto */}
+      {/* Form nuovo / modifica referto */}
       <div className={`${GLASS} rounded-3xl p-4 mb-6`}>
+        {editingId && (
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-xs font-display" style={{ color: "#fff" }}>Stai modificando un referto</p>
+            <button onClick={annullaModifica} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+              Annulla
+            </button>
+          </div>
+        )}
+
         <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Titolo</label>
         <input
           value={nuovo.titolo}
@@ -91,17 +135,23 @@ export default function AcPepeReferti() {
           style={{ background: "#fff" }}
         />
 
-        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Tipo</label>
-        <select
+        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Categoria</label>
+        <input
           value={nuovo.tipo}
           onChange={(e) => setNuovo((prev) => ({ ...prev, tipo: e.target.value }))}
-          className="w-full rounded-xl px-3 py-2 text-sm mb-3"
+          placeholder="es. esami, visita, oppure una nuova a scelta"
+          list="tipi-referti"
+          className="w-full rounded-xl px-3 py-2 text-sm mb-1"
           style={{ background: "#fff" }}
-        >
-          {TIPI.map((t) => (
-            <option key={t.id} value={t.id}>{t.label}</option>
+        />
+        <datalist id="tipi-referti">
+          {tipiDisponibili.map((t) => (
+            <option key={t} value={t}>{labelTipo(t)}</option>
           ))}
-        </select>
+        </datalist>
+        <p className="text-[11px] mb-3" style={{ color: "rgba(255,255,255,0.6)" }}>
+          Scegli una categoria esistente o scrivine una nuova: verrà proposta anche la prossima volta.
+        </p>
 
         <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Data</label>
         <input
@@ -121,27 +171,33 @@ export default function AcPepeReferti() {
           style={{ background: "#fff" }}
         />
 
-        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Origine del file</label>
-        <div className="flex gap-2 mb-3">
-          <button
-            onClick={() => setModalitaOrigine("file")}
-            className="flex-1 py-2 rounded-xl text-sm"
-            style={modalitaOrigine === "file" ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
-          >
-            Carica file
-          </button>
-          <button
-            onClick={() => setModalitaOrigine("link")}
-            className="flex-1 py-2 rounded-xl text-sm"
-            style={modalitaOrigine === "link" ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
-          >
-            Incolla link Drive
-          </button>
-        </div>
-
-        {modalitaOrigine === "file" ? (
+        {!editingId && (
           <>
-            <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>File (PDF o foto)</label>
+            <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Origine del file</label>
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => setModalitaOrigine("file")}
+                className="flex-1 py-2 rounded-xl text-sm"
+                style={modalitaOrigine === "file" ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+              >
+                Carica file
+              </button>
+              <button
+                onClick={() => setModalitaOrigine("link")}
+                className="flex-1 py-2 rounded-xl text-sm"
+                style={modalitaOrigine === "link" ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+              >
+                Incolla link Drive
+              </button>
+            </div>
+          </>
+        )}
+
+        {(editingId || modalitaOrigine === "file") && (
+          <>
+            <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>
+              {editingId ? "Sostituisci file (opzionale)" : "File (PDF o foto)"}
+            </label>
             <input
               type="file"
               accept="application/pdf,image/*"
@@ -150,7 +206,9 @@ export default function AcPepeReferti() {
               style={{ background: "#fff" }}
             />
           </>
-        ) : (
+        )}
+
+        {!editingId && modalitaOrigine === "link" && (
           <>
             <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Link Google Drive</label>
             <input
@@ -180,11 +238,11 @@ export default function AcPepeReferti() {
           style={{ background: T.forest, color: "#fff" }}
         >
           {caricando ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-          {caricando ? "Carico..." : "Carica referto"}
+          {caricando ? "Salvo..." : editingId ? "Aggiorna referto" : "Carica referto"}
         </button>
       </div>
 
-      {/* Filtro per tipo */}
+      {/* Filtro per categoria */}
       <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
         <button
           onClick={() => setFiltro("tutti")}
@@ -193,14 +251,14 @@ export default function AcPepeReferti() {
         >
           Tutti
         </button>
-        {TIPI.map((t) => (
+        {tipiPresenti.map((t) => (
           <button
-            key={t.id}
-            onClick={() => setFiltro(t.id)}
+            key={t}
+            onClick={() => setFiltro(t)}
             className="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium"
-            style={filtro === t.id ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+            style={filtro === t ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
           >
-            {t.label}
+            {labelTipo(t)}
           </button>
         ))}
       </div>
@@ -211,7 +269,7 @@ export default function AcPepeReferti() {
           <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessun referto caricato.</p>
         )}
         {filtrati.map((r) => (
-          <div key={r.id} className={`${GLASS} rounded-2xl px-4 py-3`}>
+          <div key={r.id} className={`${GLASS} rounded-2xl px-4 py-3`} style={{ outline: editingId === r.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "#fff" }}>
                 <FileText size={17} color={T.forest} />
@@ -219,7 +277,7 @@ export default function AcPepeReferti() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium" style={{ color: "#fff" }}>{r.titolo}</p>
                 <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
-                  {r.data} · {TIPI.find((t) => t.id === r.tipo)?.label || r.tipo}
+                  {r.data} · {labelTipo(r.tipo)}
                   {r.note ? ` · ${r.note}` : ""}
                 </p>
               </div>
@@ -234,6 +292,9 @@ export default function AcPepeReferti() {
               >
                 <ExternalLink size={13} /> Apri
               </a>
+              <button onClick={() => handleModifica(r)} className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                <Pencil size={13} /> Modifica
+              </button>
               <button onClick={() => handleElimina(r)} className="p-1.5 rounded-lg" style={{ background: "rgba(224,82,82,0.35)" }}>
                 <Trash2 size={14} color="#fff" />
               </button>
