@@ -28,6 +28,9 @@ export default function AcPepeReferti() {
   const [editingPercorso, setEditingPercorso] = useState(null);
   const [caricando, setCaricando] = useState(false);
   const [errore, setErrore] = useState(null);
+  const [mostraNuovaCategoria, setMostraNuovaCategoria] = useState(false);
+  const [nuovaCategoriaTesto, setNuovaCategoriaTesto] = useState("");
+  const [categorieExtra, setCategorieExtra] = useState([]); // categorie appena create, non ancora presenti in nessun referto
 
   useEffect(() => {
     caricaReferti();
@@ -39,12 +42,12 @@ export default function AcPepeReferti() {
     setCaricato(true);
   }
 
-  // Categorie disponibili nel datalist: quelle base + tutte quelle già usate nei tuoi referti.
+  // Categorie disponibili nel menu: quelle base + quelle già usate nei referti + quelle appena create.
   const tipiDisponibili = useMemo(() => {
     const daiReferti = referti.map((r) => r.tipo).filter(Boolean);
-    const tuttiIds = new Set([...TIPI_BASE.map((t) => t.id), ...daiReferti]);
+    const tuttiIds = new Set([...TIPI_BASE.map((t) => t.id), ...daiReferti, ...categorieExtra]);
     return Array.from(tuttiIds);
-  }, [referti]);
+  }, [referti, categorieExtra]);
 
   function labelTipo(tipoId) {
     return TIPI_BASE.find((t) => t.id === tipoId)?.label || tipoId;
@@ -58,6 +61,15 @@ export default function AcPepeReferti() {
     setLink("");
     setModalitaOrigine("file");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function confermaNuovaCategoria() {
+    const valore = nuovaCategoriaTesto.trim().toLowerCase().replace(/\s+/g, "_");
+    if (!valore) return;
+    setCategorieExtra((prev) => Array.from(new Set([...prev, valore])));
+    setNuovo((prev) => ({ ...prev, tipo: valore }));
+    setNuovaCategoriaTesto("");
+    setMostraNuovaCategoria(false);
   }
 
   function annullaModifica() {
@@ -136,22 +148,44 @@ export default function AcPepeReferti() {
         />
 
         <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Categoria</label>
-        <input
-          value={nuovo.tipo}
-          onChange={(e) => setNuovo((prev) => ({ ...prev, tipo: e.target.value }))}
-          placeholder="es. esami, visita, oppure una nuova a scelta"
-          list="tipi-referti"
-          className="w-full rounded-xl px-3 py-2 text-sm mb-1"
+        <select
+          value={mostraNuovaCategoria ? "__nuova__" : nuovo.tipo}
+          onChange={(e) => {
+            if (e.target.value === "__nuova__") {
+              setMostraNuovaCategoria(true);
+            } else {
+              setMostraNuovaCategoria(false);
+              setNuovo((prev) => ({ ...prev, tipo: e.target.value }));
+            }
+          }}
+          className="w-full rounded-xl px-3 py-2 text-sm mb-3"
           style={{ background: "#fff" }}
-        />
-        <datalist id="tipi-referti">
+        >
           {tipiDisponibili.map((t) => (
             <option key={t} value={t}>{labelTipo(t)}</option>
           ))}
-        </datalist>
-        <p className="text-[11px] mb-3" style={{ color: "rgba(255,255,255,0.6)" }}>
-          Scegli una categoria esistente o scrivine una nuova: verrà proposta anche la prossima volta.
-        </p>
+          <option value="__nuova__">+ Nuova categoria</option>
+        </select>
+
+        {mostraNuovaCategoria && (
+          <div className="flex gap-2 mb-3">
+            <input
+              value={nuovaCategoriaTesto}
+              onChange={(e) => setNuovaCategoriaTesto(e.target.value)}
+              placeholder="Nome nuova categoria"
+              className="flex-1 rounded-xl px-3 py-2 text-sm"
+              style={{ background: "#fff" }}
+              autoFocus
+            />
+            <button
+              onClick={confermaNuovaCategoria}
+              className="px-4 rounded-xl text-sm font-display"
+              style={{ background: T.forest, color: "#fff" }}
+            >
+              Aggiungi
+            </button>
+          </div>
+        )}
 
         <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Data</label>
         <input
