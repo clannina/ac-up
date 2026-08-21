@@ -252,6 +252,34 @@ export async function eliminaReferto(id, filePercorso) {
   if (error) throw error;
 }
 
+// Aggiorna i dati di un referto già esistente. Se viene passato un nuovo file,
+// sostituisce anche l'allegato (rimuovendo il vecchio da Storage).
+export async function aggiornaReferto(id, { titolo, tipo, data, note, file, vecchioPercorso }) {
+  const payload = { titolo, tipo: tipo || "altro", data, note: note || null };
+
+  if (file) {
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user.id;
+    const estensione = file.name.split(".").pop();
+    const percorso = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${estensione}`;
+
+    const { error: uploadError } = await supabase.storage.from("ac-pepe-referti").upload(percorso, file);
+    if (uploadError) throw uploadError;
+
+    const { data: pubUrl } = supabase.storage.from("ac-pepe-referti").getPublicUrl(percorso);
+    payload.file_url = pubUrl.publicUrl;
+    payload.file_nome = file.name;
+    payload.file_percorso = percorso;
+
+    if (vecchioPercorso) {
+      await supabase.storage.from("ac-pepe-referti").remove([vecchioPercorso]);
+    }
+  }
+
+  const { error } = await supabase.from("ac_pepe_referti").update(payload).eq("id", id);
+  if (error) throw error;
+}
+
 // Variante senza upload: salva solo un link esterno (es. Google Drive condiviso).
 export async function creaRefertoLink({ titolo, tipo, data, note, link }) {
   const { data: userData } = await supabase.auth.getUser();
