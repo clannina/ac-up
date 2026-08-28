@@ -1,9 +1,9 @@
 import { NavLink } from "react-router-dom";
-import { Wind, Pill, CalendarClock, FileText } from "lucide-react";
+import { Activity, Pill, CalendarClock, FileText } from "lucide-react";
 import { T } from "../lib/theme";
 
 const LINKS = [
-  { to: "/ac-pepe/respiri", label: "Respiri", icon: Wind },
+  { to: "/ac-pepe/respiri", label: "Monitoraggi", icon: Activity },
   { to: "/ac-pepe/terapie", label: "Terapie", icon: Pill },
   { to: "/ac-pepe/scadenze", label: "Scadenze", icon: CalendarClock },
   { to: "/ac-pepe/referti", label: "Referti", icon: FileText },
