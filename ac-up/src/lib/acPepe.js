@@ -228,13 +228,15 @@ export async function getUltimoPeso() {
   return data;
 }
 
-export async function creaPeso({ peso_kg, nota }) {
+export async function creaPeso({ peso_kg, nota, data }) {
   const { data: userData } = await supabase.auth.getUser();
-  const { error } = await supabase.from("ac_pepe_peso").insert({
+  const payload = {
     profile_id: userData.user.id,
     peso_kg,
     nota: nota || null,
-  });
+  };
+  if (data) payload.data = data;
+  const { error } = await supabase.from("ac_pepe_peso").insert(payload);
   if (error) throw error;
 }
 
