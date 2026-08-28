@@ -157,7 +157,7 @@ export default function AcPepeRespiri() {
   return (
     <div className="min-h-screen pb-28 px-4 pt-6" style={{ background: BACKGROUND }}>
       <AcPepeHeader />
-      <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Respiri</h1>
+      <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Monitoraggi</h1>
 
       {/* Selettore scheda */}
       <div className="flex gap-2 mb-5">
