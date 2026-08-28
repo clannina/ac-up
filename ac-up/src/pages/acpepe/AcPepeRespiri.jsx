@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceArea } from "recharts";
-import { Wind, Play, Square, RotateCcw, Trash2 } from "lucide-react";
+import { Wind, Play, Square, RotateCcw, Trash2, Ruler } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import AcPepeHeader from "../../components/AcPepeHeader.jsx";
-import { getRespiri, creaRespiro, eliminaRespiro, statoRespiro } from "../../lib/acPepe";
+import { getRespiri, creaRespiro, eliminaRespiro, statoRespiro, getAddome, creaAddome, eliminaAddome } from "../../lib/acPepe";
 
 const BACKGROUND = "linear-gradient(180deg, #F5C518 0%, #E9311A 100%)";
 const DURATA_CONTEGGIO = 60; // secondi
 
 export default function AcPepeRespiri() {
+  const [scheda, setScheda] = useState("respiri"); // "respiri" | "addome"
+
   const [storico, setStorico] = useState([]);
   const [caricato, setCaricato] = useState(false);
 
@@ -25,9 +27,44 @@ export default function AcPepeRespiri() {
   const intervalRef = useRef(null);
   const startTimeRef = useRef(null);
 
+  // Stato del monitoraggio addome (circonferenza + liquido)
+  const [storicoAddome, setStoricoAddome] = useState([]);
+  const [caricatoAddome, setCaricatoAddome] = useState(false);
+  const [nuovoAddome, setNuovoAddome] = useState({ circonferenza_cm: "", liquido_ml: "", nota: "" });
+  const [salvandoAddome, setSalvandoAddome] = useState(false);
+
   useEffect(() => {
     caricaStorico();
+    caricaStoricoAddome();
   }, []);
+
+  async function caricaStoricoAddome() {
+    const dati = await getAddome();
+    setStoricoAddome(dati);
+    setCaricatoAddome(true);
+  }
+
+  async function salvaAddome() {
+    const circonferenza = parseFloat(nuovoAddome.circonferenza_cm);
+    if (!circonferenza || circonferenza <= 0) return;
+    setSalvandoAddome(true);
+    try {
+      await creaAddome({
+        circonferenza_cm: circonferenza,
+        liquido_ml: nuovoAddome.liquido_ml ? parseFloat(nuovoAddome.liquido_ml) : null,
+        nota: nuovoAddome.nota,
+      });
+      setNuovoAddome({ circonferenza_cm: "", liquido_ml: "", nota: "" });
+      caricaStoricoAddome();
+    } finally {
+      setSalvandoAddome(false);
+    }
+  }
+
+  async function handleEliminaAddome(id) {
+    await eliminaAddome(id);
+    caricaStoricoAddome();
+  }
 
   async function caricaStorico() {
     const dati = await getRespiri();
@@ -122,6 +159,26 @@ export default function AcPepeRespiri() {
       <AcPepeHeader />
       <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Respiri</h1>
 
+      {/* Selettore scheda */}
+      <div className="flex gap-2 mb-5">
+        <button
+          onClick={() => setScheda("respiri")}
+          className="flex-1 py-2.5 rounded-2xl text-sm font-medium flex items-center justify-center gap-1.5"
+          style={scheda === "respiri" ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+        >
+          <Wind size={16} /> Respiri
+        </button>
+        <button
+          onClick={() => setScheda("addome")}
+          className="flex-1 py-2.5 rounded-2xl text-sm font-medium flex items-center justify-center gap-1.5"
+          style={scheda === "addome" ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+        >
+          <Ruler size={16} /> Addome
+        </button>
+      </div>
+
+      {scheda === "respiri" && (
+        <>
       {/* Ultimo valore registrato */}
       {ultimo && (
         <div className={`${GLASS} rounded-3xl p-4 mb-5 flex items-center justify-between`}>
@@ -311,6 +368,131 @@ export default function AcPepeRespiri() {
           );
         })}
       </div>
+        </>
+      )}
+
+      {scheda === "addome" && (
+        <>
+          {/* Ultimo valore registrato */}
+          {storicoAddome[0] && (
+            <div className={`${GLASS} rounded-3xl p-4 mb-5`}>
+              <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.7)" }}>Ultima misurazione</p>
+              <div className="flex items-end justify-between">
+                <p className="font-mono-num text-3xl" style={{ color: "#fff" }}>
+                  {storicoAddome[0].circonferenza_cm} <span className="text-sm font-sans">cm</span>
+                </p>
+                {storicoAddome[0].liquido_ml != null && (
+                  <p className="font-mono-num text-xl" style={{ color: "#fff" }}>
+                    {storicoAddome[0].liquido_ml} <span className="text-sm font-sans">ml</span>
+                  </p>
+                )}
+              </div>
+              <p className="text-xs mt-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>
+                {new Date(storicoAddome[0].data).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+              </p>
+            </div>
+          )}
+
+          {/* Form nuova misurazione */}
+          <div className={`${GLASS} rounded-3xl p-4 mb-5`}>
+            <p className="text-sm mb-3" style={{ color: "rgba(255,255,255,0.85)" }}>
+              Misura la circonferenza dell'addome nello stesso punto ogni volta (di solito il punto più largo). Il liquido è opzionale, da compilare solo se drenato.
+            </p>
+
+            <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Circonferenza (cm)</label>
+            <input
+              type="number"
+              step="0.1"
+              inputMode="decimal"
+              value={nuovoAddome.circonferenza_cm}
+              onChange={(e) => setNuovoAddome((prev) => ({ ...prev, circonferenza_cm: e.target.value }))}
+              placeholder="es. 52.5"
+              className="w-full rounded-xl px-3 py-2 text-sm mb-3 font-mono-num"
+              style={{ background: "#fff" }}
+            />
+
+            <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Liquido drenato (ml) — opzionale</label>
+            <input
+              type="number"
+              step="1"
+              inputMode="numeric"
+              value={nuovoAddome.liquido_ml}
+              onChange={(e) => setNuovoAddome((prev) => ({ ...prev, liquido_ml: e.target.value }))}
+              placeholder="es. 350"
+              className="w-full rounded-xl px-3 py-2 text-sm mb-3 font-mono-num"
+              style={{ background: "#fff" }}
+            />
+
+            <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Note (opzionale)</label>
+            <input
+              value={nuovoAddome.nota}
+              onChange={(e) => setNuovoAddome((prev) => ({ ...prev, nota: e.target.value }))}
+              placeholder="es. dopo la paracentesi dal veterinario"
+              className="w-full rounded-xl px-3 py-2 text-sm mb-3"
+              style={{ background: "#fff" }}
+            />
+
+            <button
+              onClick={salvaAddome}
+              disabled={salvandoAddome || !nuovoAddome.circonferenza_cm}
+              className="w-full py-2.5 rounded-xl font-display text-sm disabled:opacity-40"
+              style={{ background: "#fff", color: T.forest }}
+            >
+              {salvandoAddome ? "Salvo..." : "Salva misurazione"}
+            </button>
+          </div>
+
+          {/* Grafico andamento circonferenza */}
+          {caricatoAddome && storicoAddome.length > 1 && (
+            <div className={`${GLASS} rounded-3xl p-4 mb-5`}>
+              <p className="font-display text-sm mb-3" style={{ color: "#fff" }}>Andamento circonferenza</p>
+              <div style={{ width: "100%", height: 200 }}>
+                <ResponsiveContainer>
+                  <LineChart
+                    data={[...storicoAddome].reverse().map((a) => ({
+                      data: new Date(a.data).toLocaleDateString("it-IT", { day: "numeric", month: "short" }),
+                      cm: a.circonferenza_cm,
+                    }))}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.15)" />
+                    <XAxis dataKey="data" tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: "rgba(255,255,255,0.6)", fontSize: 10 }} axisLine={false} tickLine={false} domain={["dataMin - 2", "dataMax + 2"]} />
+                    <Tooltip
+                      contentStyle={{ background: "rgba(20,20,30,0.9)", border: "none", borderRadius: 12, fontSize: 12 }}
+                      labelStyle={{ color: "#fff" }}
+                    />
+                    <Line type="monotone" dataKey="cm" stroke="#fff" strokeWidth={2.5} dot={{ r: 3, fill: "#fff" }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Storico misurazioni addome */}
+          <h2 className="font-display text-sm mb-2" style={{ color: "#fff" }}>Storico misurazioni</h2>
+          <div className="flex flex-col gap-2">
+            {caricatoAddome && storicoAddome.length === 0 && (
+              <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessuna misurazione ancora registrata.</p>
+            )}
+            {storicoAddome.map((a) => (
+              <div key={a.id} className={`${GLASS} rounded-2xl px-4 py-3 flex items-center justify-between`}>
+                <div>
+                  <p className="font-mono-num text-base font-semibold" style={{ color: "#fff" }}>
+                    {a.circonferenza_cm} cm{a.liquido_ml != null && ` · ${a.liquido_ml} ml`}
+                  </p>
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+                    {new Date(a.data).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    {a.nota ? ` · ${a.nota}` : ""}
+                  </p>
+                </div>
+                <button onClick={() => handleEliminaAddome(a.id)} className="p-2 rounded-lg" style={{ background: "rgba(224,82,82,0.35)" }}>
+                  <Trash2 size={15} color="#fff" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
