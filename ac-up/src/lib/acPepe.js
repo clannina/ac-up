@@ -280,6 +280,47 @@ export async function aggiornaReferto(id, { titolo, tipo, data, note, file, vecc
   if (error) throw error;
 }
 
+// ============================================
+// ADDOME (circonferenza + liquido, monitoraggio ascite)
+// ============================================
+
+export async function getAddome(limite = 200) {
+  const { data, error } = await supabase
+    .from("ac_pepe_addome")
+    .select("*")
+    .order("data", { ascending: false })
+    .limit(limite);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getUltimoAddome() {
+  const { data, error } = await supabase
+    .from("ac_pepe_addome")
+    .select("*")
+    .order("data", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function creaAddome({ circonferenza_cm, liquido_ml, nota }) {
+  const { data: userData } = await supabase.auth.getUser();
+  const { error } = await supabase.from("ac_pepe_addome").insert({
+    profile_id: userData.user.id,
+    circonferenza_cm,
+    liquido_ml: liquido_ml || null,
+    nota: nota || null,
+  });
+  if (error) throw error;
+}
+
+export async function eliminaAddome(id) {
+  const { error } = await supabase.from("ac_pepe_addome").delete().eq("id", id);
+  if (error) throw error;
+}
+
 // Variante senza upload: salva solo un link esterno (es. Google Drive condiviso).
 export async function creaRefertoLink({ titolo, tipo, data, note, link }) {
   const { data: userData } = await supabase.auth.getUser();
