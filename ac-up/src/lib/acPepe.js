@@ -204,6 +204,46 @@ export async function eliminaScadenza(id) {
 }
 
 // ============================================
+// PESO
+// ============================================
+
+export async function getPeso(limite = 200) {
+  const { data, error } = await supabase
+    .from("ac_pepe_peso")
+    .select("*")
+    .order("data", { ascending: false })
+    .limit(limite);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getUltimoPeso() {
+  const { data, error } = await supabase
+    .from("ac_pepe_peso")
+    .select("*")
+    .order("data", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function creaPeso({ peso_kg, nota }) {
+  const { data: userData } = await supabase.auth.getUser();
+  const { error } = await supabase.from("ac_pepe_peso").insert({
+    profile_id: userData.user.id,
+    peso_kg,
+    nota: nota || null,
+  });
+  if (error) throw error;
+}
+
+export async function eliminaPeso(id) {
+  const { error } = await supabase.from("ac_pepe_peso").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ============================================
 // REFERTI (documenti/allegati)
 // ============================================
 
