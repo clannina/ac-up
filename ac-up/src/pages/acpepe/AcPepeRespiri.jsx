@@ -75,6 +75,8 @@ export default function AcPepeRespiri() {
   const [storicoPeso, setStoricoPeso] = useState([]);
   const [caricatoPeso, setCaricatoPeso] = useState(false);
   const [nuovoPeso, setNuovoPeso] = useState({ peso_kg: "", nota: "" });
+  const [quandoPeso, setQuandoPeso] = useState("oggi"); // "oggi" | "calendario"
+  const [dataPeso, setDataPeso] = useState(new Date().toISOString().slice(0, 10));
   const [salvandoPeso, setSalvandoPeso] = useState(false);
 
   async function caricaStoricoPeso() {
@@ -88,8 +90,14 @@ export default function AcPepeRespiri() {
     if (!peso || peso <= 0) return;
     setSalvandoPeso(true);
     try {
-      await creaPeso({ peso_kg: peso, nota: nuovoPeso.nota });
+      await creaPeso({
+        peso_kg: peso,
+        nota: nuovoPeso.nota,
+        data: quandoPeso === "calendario" ? new Date(`${dataPeso}T12:00:00`).toISOString() : undefined,
+      });
       setNuovoPeso({ peso_kg: "", nota: "" });
+      setQuandoPeso("oggi");
+      setDataPeso(new Date().toISOString().slice(0, 10));
       caricaStoricoPeso();
     } finally {
       setSalvandoPeso(false);
@@ -564,6 +572,35 @@ export default function AcPepeRespiri() {
               className="w-full rounded-xl px-3 py-2 text-sm mb-3 font-mono-num"
               style={{ background: "#fff" }}
             />
+
+            <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Quando</label>
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => setQuandoPeso("oggi")}
+                className="flex-1 py-2 rounded-xl text-sm"
+                style={quandoPeso === "oggi" ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+              >
+                Oggi
+              </button>
+              <button
+                onClick={() => setQuandoPeso("calendario")}
+                className="flex-1 py-2 rounded-xl text-sm"
+                style={quandoPeso === "calendario" ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+              >
+                Calendario
+              </button>
+            </div>
+
+            {quandoPeso === "calendario" && (
+              <input
+                type="date"
+                value={dataPeso}
+                onChange={(e) => setDataPeso(e.target.value)}
+                max={new Date().toISOString().slice(0, 10)}
+                className="w-full rounded-xl px-3 py-2 text-sm mb-3"
+                style={{ background: "#fff" }}
+              />
+            )}
 
             <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Note (opzionale)</label>
             <input
