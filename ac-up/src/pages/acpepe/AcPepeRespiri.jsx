@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceArea } from "recharts";
-import { Wind, Play, Square, RotateCcw, Trash2, Ruler } from "lucide-react";
+import { Wind, Play, Square, RotateCcw, Trash2, Ruler, Scale } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import AcPepeHeader from "../../components/AcPepeHeader.jsx";
-import { getRespiri, creaRespiro, eliminaRespiro, statoRespiro, getAddome, creaAddome, eliminaAddome } from "../../lib/acPepe";
+import {
+  getRespiri, creaRespiro, eliminaRespiro, statoRespiro,
+  getAddome, creaAddome, eliminaAddome,
+  getPeso, creaPeso, eliminaPeso,
+} from "../../lib/acPepe";
 
 const BACKGROUND = "linear-gradient(180deg, #F5C518 0%, #E9311A 100%)";
 const DURATA_CONTEGGIO = 60; // secondi
@@ -36,6 +40,7 @@ export default function AcPepeRespiri() {
   useEffect(() => {
     caricaStorico();
     caricaStoricoAddome();
+    caricaStoricoPeso();
   }, []);
 
   async function caricaStoricoAddome() {
@@ -64,6 +69,36 @@ export default function AcPepeRespiri() {
   async function handleEliminaAddome(id) {
     await eliminaAddome(id);
     caricaStoricoAddome();
+  }
+
+  // Stato del monitoraggio peso
+  const [storicoPeso, setStoricoPeso] = useState([]);
+  const [caricatoPeso, setCaricatoPeso] = useState(false);
+  const [nuovoPeso, setNuovoPeso] = useState({ peso_kg: "", nota: "" });
+  const [salvandoPeso, setSalvandoPeso] = useState(false);
+
+  async function caricaStoricoPeso() {
+    const dati = await getPeso();
+    setStoricoPeso(dati);
+    setCaricatoPeso(true);
+  }
+
+  async function salvaPeso() {
+    const peso = parseFloat(nuovoPeso.peso_kg);
+    if (!peso || peso <= 0) return;
+    setSalvandoPeso(true);
+    try {
+      await creaPeso({ peso_kg: peso, nota: nuovoPeso.nota });
+      setNuovoPeso({ peso_kg: "", nota: "" });
+      caricaStoricoPeso();
+    } finally {
+      setSalvandoPeso(false);
+    }
+  }
+
+  async function handleEliminaPeso(id) {
+    await eliminaPeso(id);
+    caricaStoricoPeso();
   }
 
   async function caricaStorico() {
@@ -174,6 +209,13 @@ export default function AcPepeRespiri() {
           style={scheda === "addome" ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
         >
           <Ruler size={16} /> Addome
+        </button>
+        <button
+          onClick={() => setScheda("peso")}
+          className="flex-1 py-2.5 rounded-2xl text-sm font-medium flex items-center justify-center gap-1.5"
+          style={scheda === "peso" ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+        >
+          <Scale size={16} /> Peso
         </button>
       </div>
 
@@ -486,6 +528,104 @@ export default function AcPepeRespiri() {
                   </p>
                 </div>
                 <button onClick={() => handleEliminaAddome(a.id)} className="p-2 rounded-lg" style={{ background: "rgba(224,82,82,0.35)" }}>
+                  <Trash2 size={15} color="#fff" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {scheda === "peso" && (
+        <>
+          {/* Ultimo valore registrato */}
+          {storicoPeso[0] && (
+            <div className={`${GLASS} rounded-3xl p-4 mb-5`}>
+              <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.7)" }}>Ultima misurazione</p>
+              <p className="font-mono-num text-3xl" style={{ color: "#fff" }}>
+                {storicoPeso[0].peso_kg} <span className="text-sm font-sans">kg</span>
+              </p>
+              <p className="text-xs mt-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>
+                {new Date(storicoPeso[0].data).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+              </p>
+            </div>
+          )}
+
+          {/* Form nuova misurazione */}
+          <div className={`${GLASS} rounded-3xl p-4 mb-5`}>
+            <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Peso (kg)</label>
+            <input
+              type="number"
+              step="0.1"
+              inputMode="decimal"
+              value={nuovoPeso.peso_kg}
+              onChange={(e) => setNuovoPeso((prev) => ({ ...prev, peso_kg: e.target.value }))}
+              placeholder="es. 28.4"
+              className="w-full rounded-xl px-3 py-2 text-sm mb-3 font-mono-num"
+              style={{ background: "#fff" }}
+            />
+
+            <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Note (opzionale)</label>
+            <input
+              value={nuovoPeso.nota}
+              onChange={(e) => setNuovoPeso((prev) => ({ ...prev, nota: e.target.value }))}
+              placeholder="es. pesato dal veterinario"
+              className="w-full rounded-xl px-3 py-2 text-sm mb-3"
+              style={{ background: "#fff" }}
+            />
+
+            <button
+              onClick={salvaPeso}
+              disabled={salvandoPeso || !nuovoPeso.peso_kg}
+              className="w-full py-2.5 rounded-xl font-display text-sm disabled:opacity-40"
+              style={{ background: "#fff", color: T.forest }}
+            >
+              {salvandoPeso ? "Salvo..." : "Salva misurazione"}
+            </button>
+          </div>
+
+          {/* Grafico andamento peso */}
+          {caricatoPeso && storicoPeso.length > 1 && (
+            <div className={`${GLASS} rounded-3xl p-4 mb-5`}>
+              <p className="font-display text-sm mb-3" style={{ color: "#fff" }}>Andamento</p>
+              <div style={{ width: "100%", height: 200 }}>
+                <ResponsiveContainer>
+                  <LineChart
+                    data={[...storicoPeso].reverse().map((p) => ({
+                      data: new Date(p.data).toLocaleDateString("it-IT", { day: "numeric", month: "short" }),
+                      kg: p.peso_kg,
+                    }))}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.15)" />
+                    <XAxis dataKey="data" tick={{ fill: "rgba(255,255,255,0.8)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: "rgba(255,255,255,0.6)", fontSize: 10 }} axisLine={false} tickLine={false} domain={["dataMin - 1", "dataMax + 1"]} />
+                    <Tooltip
+                      contentStyle={{ background: "rgba(20,20,30,0.9)", border: "none", borderRadius: 12, fontSize: 12 }}
+                      labelStyle={{ color: "#fff" }}
+                    />
+                    <Line type="monotone" dataKey="kg" stroke="#fff" strokeWidth={2.5} dot={{ r: 3, fill: "#fff" }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Storico misurazioni peso */}
+          <h2 className="font-display text-sm mb-2" style={{ color: "#fff" }}>Storico misurazioni</h2>
+          <div className="flex flex-col gap-2">
+            {caricatoPeso && storicoPeso.length === 0 && (
+              <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessuna misurazione ancora registrata.</p>
+            )}
+            {storicoPeso.map((p) => (
+              <div key={p.id} className={`${GLASS} rounded-2xl px-4 py-3 flex items-center justify-between`}>
+                <div>
+                  <p className="font-mono-num text-base font-semibold" style={{ color: "#fff" }}>{p.peso_kg} kg</p>
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+                    {new Date(p.data).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    {p.nota ? ` · ${p.nota}` : ""}
+                  </p>
+                </div>
+                <button onClick={() => handleEliminaPeso(p.id)} className="p-2 rounded-lg" style={{ background: "rgba(224,82,82,0.35)" }}>
                   <Trash2 size={15} color="#fff" />
                 </button>
               </div>
