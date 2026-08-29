@@ -14,17 +14,35 @@ export default async function handler(req, res) {
 
   const oggi = new Date();
   oggi.setHours(0, 0, 0, 0);
-
-  const { data: scadenze, error } = await supabase.from("ac_home_scadenze").select("*");
-  if (error) {
-    res.status(500).json({ error: error.message });
-    return;
-  }
-
   const GIORNI_PREAVVISO = [1, 2, 5];
   let notificheInviate = 0;
 
-  for (const scadenza of scadenze) {
+  async function invia(subscription, payload) {
+    try {
+      await webpush.sendNotification(
+        { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } },
+        payload
+      );
+      return true;
+    } catch (err) {
+      // Se la subscription non e' piu' valida (endpoint scaduto/revocato), la rimuoviamo
+      if (err.statusCode === 404 || err.statusCode === 410) {
+        await supabase.from("ac_home_push_subscriptions").delete().eq("id", subscription.id);
+      }
+      return false;
+    }
+  }
+
+  // ============================================
+  // AC HOME
+  // ============================================
+  const { data: scadenzeHome, error: errHome } = await supabase.from("ac_home_scadenze").select("*");
+  if (errHome) {
+    res.status(500).json({ error: errHome.message });
+    return;
+  }
+
+  for (const scadenza of scadenzeHome) {
     const dataScadenza = new Date(scadenza.data_scadenza);
     dataScadenza.setHours(0, 0, 0, 0);
     const giorniMancanti = Math.round((dataScadenza - oggi) / (1000 * 60 * 60 * 24));
@@ -45,33 +63,31 @@ export default async function handler(req, res) {
       url: "/ac-home",
     });
 
+    let inviataAlmenoUnaVolta = false;
     for (const sub of subscriptions || []) {
-      try {
-        await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payload
-        );
+      const ok = await invia(sub, payload);
+      if (ok) {
         notificheInviate++;
-      } catch (err) {
-        // Se la subscription non e' piu' valida (endpoint scaduto/revocato), la rimuoviamo
-        if (err.statusCode === 404 || err.statusCode === 410) {
-          await supabase.from("ac_home_push_subscriptions").delete().eq("id", sub.id);
-        }
+        inviataAlmenoUnaVolta = true;
       }
     }
 
-    await supabase.from("ac_home_scadenze").update({ [colonnaNotifica]: true }).eq("id", scadenza.id);
+    // IMPORTANTE: segniamo "notificata" solo se e' stata davvero recapitata a qualcuno.
+    // Se non c'era ancora nessun dispositivo iscritto, ci riproviamo al prossimo giro.
+    if (inviataAlmenoUnaVolta) {
+      await supabase.from("ac_home_scadenze").update({ [colonnaNotifica]: true }).eq("id", scadenza.id);
+    }
   }
 
   // Fa avanzare automaticamente le scadenze ricorrenti (annuale/biennale) gia' passate,
   // cosi' l'anno prossimo (o tra due anni) il ciclo di notifiche riparte da solo.
-  const { data: scaduteRicorrenti } = await supabase
+  const { data: scaduteRicorrentiHome } = await supabase
     .from("ac_home_scadenze")
     .select("*")
     .lt("data_scadenza", oggi.toISOString().slice(0, 10))
     .neq("ricorrenza", "una_tantum");
 
-  for (const s of scaduteRicorrenti || []) {
+  for (const s of scaduteRicorrentiHome || []) {
     const prossima = new Date(s.data_scadenza);
     prossima.setFullYear(prossima.getFullYear() + (s.ricorrenza === "biennale" ? 2 : 1));
     await supabase
@@ -83,6 +99,74 @@ export default async function handler(req, res) {
         notificato_5: false,
       })
       .eq("id", s.id);
+  }
+
+  // ============================================
+  // ACPEPE (condivisa: notifica tutte le persone autorizzate, non solo chi ha creato la scadenza)
+  // ============================================
+  const { data: scadenzePepe, error: errPepe } = await supabase.from("ac_pepe_scadenze").select("*");
+  if (!errPepe && scadenzePepe) {
+    const { data: autorizzati } = await supabase.from("ac_pepe_utenti_autorizzati").select("user_id");
+    const idAutorizzati = (autorizzati || []).map((a) => a.user_id);
+
+    let subscriptionsPepe = [];
+    if (idAutorizzati.length > 0) {
+      const { data } = await supabase
+        .from("ac_home_push_subscriptions")
+        .select("*")
+        .in("user_id", idAutorizzati);
+      subscriptionsPepe = data || [];
+    }
+
+    for (const scadenza of scadenzePepe) {
+      const dataScadenza = new Date(scadenza.data_scadenza);
+      dataScadenza.setHours(0, 0, 0, 0);
+      const giorniMancanti = Math.round((dataScadenza - oggi) / (1000 * 60 * 60 * 24));
+
+      if (!GIORNI_PREAVVISO.includes(giorniMancanti)) continue;
+
+      const colonnaNotifica = `notificato_${giorniMancanti}`;
+      if (scadenza[colonnaNotifica]) continue;
+
+      const payload = JSON.stringify({
+        title: "AcPepe · Scadenza in arrivo",
+        body: `${scadenza.titolo}: tra ${giorniMancanti} giorno${giorniMancanti > 1 ? "i" : ""}`,
+        url: "/ac-pepe/scadenze",
+      });
+
+      let inviataAlmenoUnaVolta = false;
+      for (const sub of subscriptionsPepe) {
+        const ok = await invia(sub, payload);
+        if (ok) {
+          notificheInviate++;
+          inviataAlmenoUnaVolta = true;
+        }
+      }
+
+      if (inviataAlmenoUnaVolta) {
+        await supabase.from("ac_pepe_scadenze").update({ [colonnaNotifica]: true }).eq("id", scadenza.id);
+      }
+    }
+
+    const { data: scaduteRicorrentiPepe } = await supabase
+      .from("ac_pepe_scadenze")
+      .select("*")
+      .lt("data_scadenza", oggi.toISOString().slice(0, 10))
+      .neq("ricorrenza", "una_tantum");
+
+    for (const s of scaduteRicorrentiPepe || []) {
+      const prossima = new Date(s.data_scadenza);
+      prossima.setFullYear(prossima.getFullYear() + (s.ricorrenza === "biennale" ? 2 : 1));
+      await supabase
+        .from("ac_pepe_scadenze")
+        .update({
+          data_scadenza: prossima.toISOString().slice(0, 10),
+          notificato_1: false,
+          notificato_2: false,
+          notificato_5: false,
+        })
+        .eq("id", s.id);
+    }
   }
 
   res.status(200).json({ ok: true, notificheInviate });
