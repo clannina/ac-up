@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { GLASS } from "./lib/theme";
+import { useAuth } from "./lib/AuthContext.jsx";
+import { PROPRIETARIO_ID } from "./lib/ownership.js";
 
 // Card di lancio per ogni app dell'hub.
 function AppCard({ to, title, subtitle, logo }) {
@@ -24,6 +26,11 @@ function AppCard({ to, title, subtitle, logo }) {
 }
 
 export default function Hub() {
+  const { session } = useAuth();
+  // Finché non sappiamo chi è (sessione non ancora caricata), mostriamo tutto:
+  // le rotte protette controllano comunque l'accesso reale una volta dentro.
+  const isProprietario = session === undefined || session === null || session?.user?.id === PROPRIETARIO_ID;
+
   return (
     <div className="bg-gradient-to-b from-[#14b8a6] via-[#f2f2f0] to-[#f2b705] min-h-screen flex flex-col items-center px-5 py-3">
       <header className="text-center mb-2">
@@ -35,24 +42,28 @@ export default function Hub() {
       </header>
 
       <div className="w-full max-w-md flex flex-col gap-4">
-        <AppCard
-          to="/ac-home"
-          title="AC Home"
-          subtitle="Spese casa, auto e scooter"
-          logo="/icons/ac-home-logo-transparent.png"
-        />
+        {isProprietario && (
+          <AppCard
+            to="/ac-home"
+            title="AC Home"
+            subtitle="Spese casa, auto e scooter"
+            logo="/icons/ac-home-logo-transparent.png"
+          />
+        )}
         <AppCard
           to="/ac-pepe"
           title="AcPepe"
           subtitle="Salute e terapie di Pepe"
           logo="/icons/ac-pepe-logo-transparent.png"
         />
-        <AppCard
-          to="/ac-up"
-          title="AC UP"
-          subtitle="Nutrizione e piano pasti"
-          logo="/icons/ac-up-logo-transparent.png"
-        />
+        {isProprietario && (
+          <AppCard
+            to="/ac-up"
+            title="AC UP"
+            subtitle="Nutrizione e piano pasti"
+            logo="/icons/ac-up-logo-transparent.png"
+          />
+        )}
       </div>
     </div>
   );
