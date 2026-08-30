@@ -17,6 +17,19 @@ export default async function handler(req, res) {
   const GIORNI_PREAVVISO = [1, 2, 5];
   let notificheInviate = 0;
 
+  // Ora corrente in Italia, per confrontarla con l'orario scelto per ogni scadenza (es. "09:00").
+  const oraItaliaCorrente = new Intl.DateTimeFormat("it-IT", {
+    timeZone: "Europe/Rome",
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date());
+
+  function eOraGiusta(oraNotifica) {
+    if (!oraNotifica) return true; // se non impostata, non blocchiamo l'invio
+    const oraImpostata = oraNotifica.split(":")[0].padStart(2, "0");
+    return oraImpostata === oraItaliaCorrente;
+  }
+
   async function invia(subscription, payload) {
     try {
       await webpush.sendNotification(
@@ -48,6 +61,7 @@ export default async function handler(req, res) {
     const giorniMancanti = Math.round((dataScadenza - oggi) / (1000 * 60 * 60 * 24));
 
     if (!GIORNI_PREAVVISO.includes(giorniMancanti)) continue;
+    if (!eOraGiusta(scadenza.ora_notifica)) continue;
 
     const colonnaNotifica = `notificato_${giorniMancanti}`;
     if (scadenza[colonnaNotifica]) continue; // gia' notificata per questa soglia
@@ -124,6 +138,7 @@ export default async function handler(req, res) {
       const giorniMancanti = Math.round((dataScadenza - oggi) / (1000 * 60 * 60 * 24));
 
       if (!GIORNI_PREAVVISO.includes(giorniMancanti)) continue;
+      if (!eOraGiusta(scadenza.ora_notifica)) continue;
 
       const colonnaNotifica = `notificato_${giorniMancanti}`;
       if (scadenza[colonnaNotifica]) continue;
