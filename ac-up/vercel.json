@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/check-scadenze",
-      "schedule": "0 11 * * *"
+      "schedule": "0 * * * *"
     }
   ],
   "rewrites": [
