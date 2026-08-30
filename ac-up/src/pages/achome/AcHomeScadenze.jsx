@@ -14,7 +14,7 @@ const GRUPPI = [
 ];
 
 const BACKGROUND = "linear-gradient(180deg, #0DAE8C 0%, #1A7FA3 55%, #5FA8DC 100%)";
-const VUOTO = { categoria_id: "", veicolo_id: "", titolo: "", data_scadenza: "", ricorrenza: "una_tantum" };
+const VUOTO = { categoria_id: "", veicolo_id: "", titolo: "", data_scadenza: "", ricorrenza: "una_tantum", ora_notifica: "09:00" };
 
 function giorniMancanti(dataScadenza) {
   const oggiZero = new Date();
@@ -62,6 +62,7 @@ export default function AcHomeScadenze() {
       titolo: s.titolo,
       data_scadenza: s.data_scadenza,
       ricorrenza: s.ricorrenza || "una_tantum",
+      ora_notifica: s.ora_notifica || "09:00",
     });
     setPersona(s.persona || getPersonaPredefinita());
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -172,6 +173,15 @@ export default function AcHomeScadenze() {
           type="date"
           value={nuova.data_scadenza}
           onChange={(e) => setNuova((prev) => ({ ...prev, data_scadenza: e.target.value }))}
+          className="w-full rounded-xl px-3 py-2 text-sm mb-3"
+          style={{ background: "#fff" }}
+        />
+
+        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Orario della notifica</label>
+        <input
+          type="time"
+          value={nuova.ora_notifica}
+          onChange={(e) => setNuova((prev) => ({ ...prev, ora_notifica: e.target.value }))}
           className="w-full rounded-xl px-3 py-2 text-sm mb-3"
           style={{ background: "#fff" }}
         />
