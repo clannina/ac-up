@@ -15,10 +15,18 @@ import {
 } from "../../lib/acPepe";
 
 const BACKGROUND = "linear-gradient(180deg, #EE6C04 0%, #AB003E 100%)";
-const VUOTO = { nome: "", dose: "", orario1: "", orario2: "", orario3: "", note: "" };
+const VUOTO = { nome: "", orario1: "", dose1: "", orario2: "", dose2: "", orario3: "", dose3: "", note: "" };
 
 function oggiISO() {
   return new Date().toISOString().slice(0, 10);
+}
+
+// Ricava la lista {orario, dose} di una terapia, con fallback per quelle
+// create prima di questa modifica (che avevano solo orari + una dose unica).
+function orariDosiDi(t) {
+  if (t.orari_dosi && t.orari_dosi.length > 0) return t.orari_dosi;
+  if (t.orari && t.orari.length > 0) return t.orari.map((o) => ({ orario: o, dose: t.dose || "" }));
+  return [{ orario: "", dose: t.dose || "" }];
 }
 
 export default function AcPepeTerapie() {
@@ -46,13 +54,15 @@ export default function AcPepeTerapie() {
 
   function handleModifica(t) {
     setEditingId(t.id);
-    const orari = t.orari || [];
+    const od = orariDosiDi(t);
     setNuova({
       nome: t.nome,
-      dose: t.dose || "",
-      orario1: orari[0] || "",
-      orario2: orari[1] || "",
-      orario3: orari[2] || "",
+      orario1: od[0]?.orario || "",
+      dose1: od[0]?.dose || "",
+      orario2: od[1]?.orario || "",
+      dose2: od[1]?.dose || "",
+      orario3: od[2]?.orario || "",
+      dose3: od[2]?.dose || "",
       note: t.note || "",
     });
     setRicettaFile(null);
@@ -67,19 +77,28 @@ export default function AcPepeTerapie() {
 
   async function handleNuova() {
     if (!nuova.nome.trim()) return;
-    const orari = [nuova.orario1, nuova.orario2, nuova.orario3].filter(Boolean);
-    const payload = { nome: nuova.nome, dose: nuova.dose, orari, note: nuova.note };
+    const orariDosi = [
+      { orario: nuova.orario1, dose: nuova.dose1 },
+      { orario: nuova.orario2, dose: nuova.dose2 },
+      { orario: nuova.orario3, dose: nuova.dose3 },
+    ].filter((o) => o.orario);
 
     setSalvando(true);
     try {
       if (editingId) {
-        await aggiornaTerapia(editingId, payload);
+        await aggiornaTerapia(editingId, {
+          nome: nuova.nome,
+          dose: orariDosi[0]?.dose || null,
+          orari: orariDosi.map((o) => o.orario),
+          orari_dosi: orariDosi,
+          note: nuova.note,
+        });
         if (ricettaFile) {
           await caricaRicettaTerapia(editingId, ricettaFile);
         }
         setEditingId(null);
       } else {
-        await creaTerapia({ ...payload, ricettaFile });
+        await creaTerapia({ nome: nuova.nome, orariDosi, note: nuova.note, ricettaFile });
       }
       setNuova(VUOTO);
       setRicettaFile(null);
@@ -120,21 +139,19 @@ export default function AcPepeTerapie() {
       <AcPepeHeader />
       <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Terapie</h1>
 
-      {/* Checklist di oggi: una card per terapia, con gli orari affiancati dentro */}
+      {/* Checklist di oggi: una card per terapia, con gli orari (e dosi) affiancati dentro */}
       <h2 className="font-display text-sm mb-2" style={{ color: "#fff" }}>Da fare oggi</h2>
       <div className="flex flex-col gap-2 mb-6">
         {terapieAttive.length === 0 && (
           <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessuna terapia attiva impostata.</p>
         )}
         {terapieAttive.map((t) => {
-          const orari = t.orari && t.orari.length > 0 ? t.orari : [""]; // "" = senza orario specifico
+          const od = orariDosiDi(t);
           return (
             <div key={t.id} className={`${GLASS} rounded-2xl px-4 py-3`}>
-              <p className="text-sm font-medium" style={{ color: "#fff" }}>
-                {t.nome} {t.dose && `· ${t.dose}`}
-              </p>
+              <p className="text-sm font-medium" style={{ color: "#fff" }}>{t.nome}</p>
               <div className="flex flex-wrap gap-2 mt-2">
-                {orari.map((orario) => {
+                {od.map(({ orario, dose }) => {
                   const chiave = `${t.id}__${orario}`;
                   const fatto = !!fatte[chiave];
                   return (
@@ -145,7 +162,7 @@ export default function AcPepeTerapie() {
                       style={fatto ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
                     >
                       {fatto && <Check size={13} strokeWidth={3} />}
-                      {orario || "senza orario"}
+                      {orario || "senza orario"}{dose ? ` · ${dose}` : ""}
                     </button>
                   );
                 })}
@@ -175,19 +192,11 @@ export default function AcPepeTerapie() {
           style={{ background: "#fff" }}
         />
 
-        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Dose</label>
-        <input
-          value={nuova.dose}
-          onChange={(e) => setNuova((prev) => ({ ...prev, dose: e.target.value }))}
-          placeholder="es. mezza compressa"
-          className="w-full rounded-xl px-3 py-2 text-sm mb-3"
-          style={{ background: "#fff" }}
-        />
-
         <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>
-          Orari (fino a 3 volte al giorno, stessa dose)
+          Orari e dose (fino a 3 volte al giorno — puoi mettere dosi diverse per ogni orario)
         </label>
-        <div className="flex gap-2 mb-3">
+
+        <div className="flex gap-2 mb-2">
           <input
             type="time"
             value={nuova.orario1}
@@ -196,6 +205,15 @@ export default function AcPepeTerapie() {
             style={{ background: "#fff" }}
           />
           <input
+            value={nuova.dose1}
+            onChange={(e) => setNuova((prev) => ({ ...prev, dose1: e.target.value }))}
+            placeholder="dose"
+            className="flex-1 rounded-xl px-2 py-2 text-sm"
+            style={{ background: "#fff" }}
+          />
+        </div>
+        <div className="flex gap-2 mb-2">
+          <input
             type="time"
             value={nuova.orario2}
             onChange={(e) => setNuova((prev) => ({ ...prev, orario2: e.target.value }))}
@@ -203,9 +221,25 @@ export default function AcPepeTerapie() {
             style={{ background: "#fff" }}
           />
           <input
+            value={nuova.dose2}
+            onChange={(e) => setNuova((prev) => ({ ...prev, dose2: e.target.value }))}
+            placeholder="dose"
+            className="flex-1 rounded-xl px-2 py-2 text-sm"
+            style={{ background: "#fff" }}
+          />
+        </div>
+        <div className="flex gap-2 mb-3">
+          <input
             type="time"
             value={nuova.orario3}
             onChange={(e) => setNuova((prev) => ({ ...prev, orario3: e.target.value }))}
+            className="flex-1 rounded-xl px-2 py-2 text-sm"
+            style={{ background: "#fff" }}
+          />
+          <input
+            value={nuova.dose3}
+            onChange={(e) => setNuova((prev) => ({ ...prev, dose3: e.target.value }))}
+            placeholder="dose"
             className="flex-1 rounded-xl px-2 py-2 text-sm"
             style={{ background: "#fff" }}
           />
@@ -252,50 +286,53 @@ export default function AcPepeTerapie() {
       {/* Elenco completo terapie attive, con modifica/pausa/elimina */}
       <h2 className="font-display text-sm mb-2" style={{ color: "#fff" }}>Tutte le terapie</h2>
       <div className="flex flex-col gap-2">
-        {terapieAttive.map((t) => (
-          <div key={t.id} className={`${GLASS} rounded-2xl px-4 py-3`} style={{ outline: editingId === t.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm font-medium" style={{ color: "#fff" }}>{t.nome} {t.dose && `· ${t.dose}`}</p>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
-                  {t.orari && t.orari.length > 0 ? `ore ${t.orari.join(", ")}` : "senza orario"}
-                  {t.note ? ` · ${t.note}` : ""}
-                </p>
+        {terapieAttive.map((t) => {
+          const od = orariDosiDi(t);
+          return (
+            <div key={t.id} className={`${GLASS} rounded-2xl px-4 py-3`} style={{ outline: editingId === t.id ? "2px solid rgba(255,255,255,0.6)" : "none" }}>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: "#fff" }}>{t.nome}</p>
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
+                    {od.map(({ orario, dose }) => `${orario || "—"}${dose ? ` (${dose})` : ""}`).join(" · ")}
+                    {t.note ? ` · ${t.note}` : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => handleModifica(t)} className="p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.2)" }}>
+                    <Pencil size={15} color="#fff" />
+                  </button>
+                  <button onClick={() => handleToggleAttiva(t)} className="p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.2)" }}>
+                    <Pause size={15} color="#fff" />
+                  </button>
+                  <button onClick={() => handleElimina(t.id)} className="p-2 rounded-lg" style={{ background: "rgba(224,82,82,0.35)" }}>
+                    <Trash2 size={15} color="#fff" />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => handleModifica(t)} className="p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.2)" }}>
-                  <Pencil size={15} color="#fff" />
-                </button>
-                <button onClick={() => handleToggleAttiva(t)} className="p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.2)" }}>
-                  <Pause size={15} color="#fff" />
-                </button>
-                <button onClick={() => handleElimina(t.id)} className="p-2 rounded-lg" style={{ background: "rgba(224,82,82,0.35)" }}>
-                  <Trash2 size={15} color="#fff" />
-                </button>
-              </div>
+              {t.ricetta_url && (
+                <div className="flex items-center gap-2 mt-2 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.15)" }}>
+                  <a
+                    href={t.ricetta_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg"
+                    style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}
+                  >
+                    <FileText size={13} /> Vedi ricetta
+                  </a>
+                  <button
+                    onClick={() => handleRimuoviRicetta(t)}
+                    className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg"
+                    style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}
+                  >
+                    <X size={13} /> Rimuovi
+                  </button>
+                </div>
+              )}
             </div>
-            {t.ricetta_url && (
-              <div className="flex items-center gap-2 mt-2 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.15)" }}>
-                <a
-                  href={t.ricetta_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg"
-                  style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}
-                >
-                  <FileText size={13} /> Vedi ricetta
-                </a>
-                <button
-                  onClick={() => handleRimuoviRicetta(t)}
-                  className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg"
-                  style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}
-                >
-                  <X size={13} /> Rimuovi
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
 
         {terapiePausa.length > 0 && (
           <>
@@ -303,7 +340,7 @@ export default function AcPepeTerapie() {
             {terapiePausa.map((t) => (
               <div key={t.id} className={`${GLASS} rounded-2xl px-4 py-3 flex justify-between items-center`} style={{ opacity: 0.6 }}>
                 <div>
-                  <p className="text-sm font-medium" style={{ color: "#fff" }}>{t.nome} {t.dose && `· ${t.dose}`}</p>
+                  <p className="text-sm font-medium" style={{ color: "#fff" }}>{t.nome}</p>
                   <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>in pausa</p>
                 </div>
                 <div className="flex items-center gap-2">
