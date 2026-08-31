@@ -9,7 +9,7 @@ import {
   getPeso, creaPeso, eliminaPeso,
 } from "../../lib/acPepe";
 
-const BACKGROUND = "linear-gradient(180deg, #F5C518 0%, #E9311A 100%)";
+const BACKGROUND = "linear-gradient(180deg, #FF914D 0%, #AB003E 100%)";
 const DURATA_CONTEGGIO = 60; // secondi
 
 export default function AcPepeRespiri() {

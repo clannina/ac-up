@@ -14,7 +14,7 @@ import {
   rimuoviRicettaTerapia,
 } from "../../lib/acPepe";
 
-const BACKGROUND = "linear-gradient(180deg, #F5C518 0%, #E9311A 100%)";
+const BACKGROUND = "linear-gradient(180deg, #FF914D 0%, #AB003E 100%)";
 const VUOTO = { nome: "", dose: "", orario1: "", orario2: "", orario3: "", note: "" };
 
 function oggiISO() {

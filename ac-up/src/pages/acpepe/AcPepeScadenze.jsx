@@ -4,7 +4,7 @@ import { getScadenze, creaScadenza, aggiornaScadenza, eliminaScadenza } from "..
 import { attivaNotifichePush, notifichePushAttive } from "../../lib/push";
 import AcPepeHeader from "../../components/AcPepeHeader.jsx";
 
-const BACKGROUND = "linear-gradient(180deg, #F5C518 0%, #E9311A 100%)";
+const BACKGROUND = "linear-gradient(180deg, #FF914D 0%, #AB003E 100%)";
 const VUOTO = { titolo: "", data_scadenza: "", ricorrenza: "una_tantum", ora_notifica: "09:00", note: "" };
 
 function giorniMancanti(dataScadenza) {

@@ -4,7 +4,7 @@ import { T, GLASS } from "../../lib/theme";
 import AcPepeHeader from "../../components/AcPepeHeader.jsx";
 import { getReferti, creaReferto, creaRefertoLink, aggiornaReferto, eliminaReferto } from "../../lib/acPepe";
 
-const BACKGROUND = "linear-gradient(180deg, #F5C518 0%, #E9311A 100%)";
+const BACKGROUND = "linear-gradient(180deg, #FF914D 0%, #AB003E 100%)";
 
 const TIPI_BASE = [
   { id: "esami", label: "Esami" },
