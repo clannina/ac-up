@@ -12,10 +12,18 @@ import {
   segnaSomministrazione,
   caricaRicettaTerapia,
   rimuoviRicettaTerapia,
+  avanzaProssimaDose,
 } from "../../lib/acPepe";
 
 const BACKGROUND = "linear-gradient(180deg, #EE6C04 0%, #AB003E 100%)";
-const VUOTO = { nome: "", orario1: "", dose1: "", orario2: "", dose2: "", orario3: "", dose3: "", note: "" };
+const VUOTO = {
+  nome: "", orario1: "", dose1: "", orario2: "", dose2: "", orario3: "", dose3: "", note: "",
+  frequenza: "giornaliera",
+  intervalloGiorni: "3",
+  prossimaDose: oggiISO(),
+  oraIntervallo: "",
+  doseIntervallo: "",
+};
 
 function oggiISO() {
   return new Date().toISOString().slice(0, 10);
@@ -64,6 +72,11 @@ export default function AcPepeTerapie() {
       orario3: od[2]?.orario || "",
       dose3: od[2]?.dose || "",
       note: t.note || "",
+      frequenza: t.frequenza || "giornaliera",
+      intervalloGiorni: t.intervallo_giorni ? String(t.intervallo_giorni) : "3",
+      prossimaDose: t.prossima_dose || oggiISO(),
+      oraIntervallo: od[0]?.orario || "",
+      doseIntervallo: od[0]?.dose || "",
     });
     setRicettaFile(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -77,28 +90,48 @@ export default function AcPepeTerapie() {
 
   async function handleNuova() {
     if (!nuova.nome.trim()) return;
-    const orariDosi = [
-      { orario: nuova.orario1, dose: nuova.dose1 },
-      { orario: nuova.orario2, dose: nuova.dose2 },
-      { orario: nuova.orario3, dose: nuova.dose3 },
-    ].filter((o) => o.orario);
+
+    let payload;
+    if (nuova.frequenza === "intervallo") {
+      const orariDosi = nuova.oraIntervallo ? [{ orario: nuova.oraIntervallo, dose: nuova.doseIntervallo }] : [];
+      payload = {
+        nome: nuova.nome,
+        dose: nuova.doseIntervallo || null,
+        orari: orariDosi.map((o) => o.orario),
+        orari_dosi: orariDosi,
+        note: nuova.note,
+        frequenza: "intervallo",
+        intervallo_giorni: parseInt(nuova.intervalloGiorni, 10) || 1,
+        prossima_dose: nuova.prossimaDose,
+      };
+    } else {
+      const orariDosi = [
+        { orario: nuova.orario1, dose: nuova.dose1 },
+        { orario: nuova.orario2, dose: nuova.dose2 },
+        { orario: nuova.orario3, dose: nuova.dose3 },
+      ].filter((o) => o.orario);
+      payload = {
+        nome: nuova.nome,
+        dose: orariDosi[0]?.dose || null,
+        orari: orariDosi.map((o) => o.orario),
+        orari_dosi: orariDosi,
+        note: nuova.note,
+        frequenza: "giornaliera",
+        intervallo_giorni: null,
+        prossima_dose: null,
+      };
+    }
 
     setSalvando(true);
     try {
       if (editingId) {
-        await aggiornaTerapia(editingId, {
-          nome: nuova.nome,
-          dose: orariDosi[0]?.dose || null,
-          orari: orariDosi.map((o) => o.orario),
-          orari_dosi: orariDosi,
-          note: nuova.note,
-        });
+        await aggiornaTerapia(editingId, payload);
         if (ricettaFile) {
           await caricaRicettaTerapia(editingId, ricettaFile);
         }
         setEditingId(null);
       } else {
-        await creaTerapia({ nome: nuova.nome, orariDosi, note: nuova.note, ricettaFile });
+        await creaTerapia({ ...payload, orariDosi: payload.orari_dosi, ricettaFile });
       }
       setNuova(VUOTO);
       setRicettaFile(null);
@@ -124,11 +157,18 @@ export default function AcPepeTerapie() {
     caricaTutto();
   }
 
-  async function handleSpunta(terapiaId, orario) {
-    const chiave = `${terapiaId}__${orario}`;
+  async function handleSpunta(terapia, orario) {
+    const chiave = `${terapia.id}__${orario}`;
     const nuovoStato = !fatte[chiave];
     setFatte((prev) => ({ ...prev, [chiave]: nuovoStato }));
-    await segnaSomministrazione(terapiaId, oggiISO(), orario, nuovoStato);
+    await segnaSomministrazione(terapia.id, oggiISO(), orario, nuovoStato);
+
+    // Terapia a intervalli (es. ogni 72 ore): quando la spunti come fatta,
+    // la prossima dose si sposta automaticamente avanti di N giorni da oggi.
+    if (nuovoStato && terapia.frequenza === "intervallo" && terapia.intervallo_giorni) {
+      await avanzaProssimaDose(terapia.id, terapia.intervallo_giorni);
+      caricaTutto();
+    }
   }
 
   const terapieAttive = terapie.filter((t) => t.attiva);
@@ -145,11 +185,18 @@ export default function AcPepeTerapie() {
         {terapieAttive.length === 0 && (
           <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessuna terapia attiva impostata.</p>
         )}
-        {terapieAttive.map((t) => {
+        {terapieAttive
+          .filter((t) => t.frequenza !== "intervallo" || !t.prossima_dose || t.prossima_dose <= oggiISO())
+          .map((t) => {
           const od = orariDosiDi(t);
           return (
             <div key={t.id} className={`${GLASS} rounded-2xl px-4 py-3`}>
-              <p className="text-sm font-medium" style={{ color: "#fff" }}>{t.nome}</p>
+              <p className="text-sm font-medium" style={{ color: "#fff" }}>
+                {t.nome}
+                {t.frequenza === "intervallo" && (
+                  <span className="text-xs font-normal ml-2 opacity-70">· ogni {t.intervallo_giorni} giorni</span>
+                )}
+              </p>
               <div className="flex flex-wrap gap-2 mt-2">
                 {od.map(({ orario, dose }) => {
                   const chiave = `${t.id}__${orario}`;
@@ -157,7 +204,7 @@ export default function AcPepeTerapie() {
                   return (
                     <button
                       key={chiave}
-                      onClick={() => handleSpunta(t.id, orario)}
+                      onClick={() => handleSpunta(t, orario)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition"
                       style={fatto ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
                     >
@@ -192,58 +239,121 @@ export default function AcPepeTerapie() {
           style={{ background: "#fff" }}
         />
 
-        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>
-          Orari e dose (fino a 3 volte al giorno — puoi mettere dosi diverse per ogni orario)
-        </label>
-
-        <div className="flex gap-2 mb-2">
-          <input
-            type="time"
-            value={nuova.orario1}
-            onChange={(e) => setNuova((prev) => ({ ...prev, orario1: e.target.value }))}
-            className="flex-1 rounded-xl px-2 py-2 text-sm"
-            style={{ background: "#fff" }}
-          />
-          <input
-            value={nuova.dose1}
-            onChange={(e) => setNuova((prev) => ({ ...prev, dose1: e.target.value }))}
-            placeholder="dose"
-            className="flex-1 rounded-xl px-2 py-2 text-sm"
-            style={{ background: "#fff" }}
-          />
-        </div>
-        <div className="flex gap-2 mb-2">
-          <input
-            type="time"
-            value={nuova.orario2}
-            onChange={(e) => setNuova((prev) => ({ ...prev, orario2: e.target.value }))}
-            className="flex-1 rounded-xl px-2 py-2 text-sm"
-            style={{ background: "#fff" }}
-          />
-          <input
-            value={nuova.dose2}
-            onChange={(e) => setNuova((prev) => ({ ...prev, dose2: e.target.value }))}
-            placeholder="dose"
-            className="flex-1 rounded-xl px-2 py-2 text-sm"
-            style={{ background: "#fff" }}
-          />
-        </div>
+        <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Frequenza</label>
         <div className="flex gap-2 mb-3">
-          <input
-            type="time"
-            value={nuova.orario3}
-            onChange={(e) => setNuova((prev) => ({ ...prev, orario3: e.target.value }))}
-            className="flex-1 rounded-xl px-2 py-2 text-sm"
-            style={{ background: "#fff" }}
-          />
-          <input
-            value={nuova.dose3}
-            onChange={(e) => setNuova((prev) => ({ ...prev, dose3: e.target.value }))}
-            placeholder="dose"
-            className="flex-1 rounded-xl px-2 py-2 text-sm"
-            style={{ background: "#fff" }}
-          />
+          <button
+            onClick={() => setNuova((prev) => ({ ...prev, frequenza: "giornaliera" }))}
+            className="flex-1 py-2 rounded-xl text-sm"
+            style={nuova.frequenza === "giornaliera" ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+          >
+            Ogni giorno
+          </button>
+          <button
+            onClick={() => setNuova((prev) => ({ ...prev, frequenza: "intervallo" }))}
+            className="flex-1 py-2 rounded-xl text-sm"
+            style={nuova.frequenza === "intervallo" ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+          >
+            A intervalli
+          </button>
         </div>
+
+        {nuova.frequenza === "giornaliera" ? (
+          <>
+            <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>
+              Orari e dose (fino a 3 volte al giorno — puoi mettere dosi diverse per ogni orario)
+            </label>
+
+            <div className="flex gap-2 mb-2">
+              <input
+                type="time"
+                value={nuova.orario1}
+                onChange={(e) => setNuova((prev) => ({ ...prev, orario1: e.target.value }))}
+                className="flex-1 rounded-xl px-2 py-2 text-sm"
+                style={{ background: "#fff" }}
+              />
+              <input
+                value={nuova.dose1}
+                onChange={(e) => setNuova((prev) => ({ ...prev, dose1: e.target.value }))}
+                placeholder="dose"
+                className="flex-1 rounded-xl px-2 py-2 text-sm"
+                style={{ background: "#fff" }}
+              />
+            </div>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="time"
+                value={nuova.orario2}
+                onChange={(e) => setNuova((prev) => ({ ...prev, orario2: e.target.value }))}
+                className="flex-1 rounded-xl px-2 py-2 text-sm"
+                style={{ background: "#fff" }}
+              />
+              <input
+                value={nuova.dose2}
+                onChange={(e) => setNuova((prev) => ({ ...prev, dose2: e.target.value }))}
+                placeholder="dose"
+                className="flex-1 rounded-xl px-2 py-2 text-sm"
+                style={{ background: "#fff" }}
+              />
+            </div>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="time"
+                value={nuova.orario3}
+                onChange={(e) => setNuova((prev) => ({ ...prev, orario3: e.target.value }))}
+                className="flex-1 rounded-xl px-2 py-2 text-sm"
+                style={{ background: "#fff" }}
+              />
+              <input
+                value={nuova.dose3}
+                onChange={(e) => setNuova((prev) => ({ ...prev, dose3: e.target.value }))}
+                placeholder="dose"
+                className="flex-1 rounded-xl px-2 py-2 text-sm"
+                style={{ background: "#fff" }}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Ogni quanti giorni (es. 72 ore = 3 giorni)</label>
+            <input
+              type="number"
+              min="1"
+              value={nuova.intervalloGiorni}
+              onChange={(e) => setNuova((prev) => ({ ...prev, intervalloGiorni: e.target.value }))}
+              className="w-full rounded-xl px-3 py-2 text-sm mb-3 font-mono-num"
+              style={{ background: "#fff" }}
+            />
+
+            <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Prossima dose (data)</label>
+            <input
+              type="date"
+              value={nuova.prossimaDose}
+              onChange={(e) => setNuova((prev) => ({ ...prev, prossimaDose: e.target.value }))}
+              className="w-full rounded-xl px-3 py-2 text-sm mb-3"
+              style={{ background: "#fff" }}
+            />
+
+            <div className="flex gap-2 mb-3">
+              <input
+                type="time"
+                value={nuova.oraIntervallo}
+                onChange={(e) => setNuova((prev) => ({ ...prev, oraIntervallo: e.target.value }))}
+                className="flex-1 rounded-xl px-2 py-2 text-sm"
+                style={{ background: "#fff" }}
+              />
+              <input
+                value={nuova.doseIntervallo}
+                onChange={(e) => setNuova((prev) => ({ ...prev, doseIntervallo: e.target.value }))}
+                placeholder="dose"
+                className="flex-1 rounded-xl px-2 py-2 text-sm"
+                style={{ background: "#fff" }}
+              />
+            </div>
+            <p className="text-[11px] mb-3" style={{ color: "rgba(255,255,255,0.6)" }}>
+              Comparirà nella checklist solo dal giorno della prossima dose in poi. Quando la spunti, la prossima si ricalcola da sola in avanti di {nuova.intervalloGiorni || "N"} giorni.
+            </p>
+          </>
+        )}
 
         <label className="block text-xs mb-1" style={{ color: "rgba(255,255,255,0.75)" }}>Note (opzionale)</label>
         <input
@@ -294,7 +404,9 @@ export default function AcPepeTerapie() {
                 <div>
                   <p className="text-sm font-medium" style={{ color: "#fff" }}>{t.nome}</p>
                   <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
-                    {od.map(({ orario, dose }) => `${orario || "—"}${dose ? ` (${dose})` : ""}`).join(" · ")}
+                    {t.frequenza === "intervallo"
+                      ? `ogni ${t.intervallo_giorni} giorni · prossima il ${t.prossima_dose}${od[0]?.dose ? ` · ${od[0].dose}` : ""}`
+                      : od.map(({ orario, dose }) => `${orario || "—"}${dose ? ` (${dose})` : ""}`).join(" · ")}
                     {t.note ? ` · ${t.note}` : ""}
                   </p>
                 </div>

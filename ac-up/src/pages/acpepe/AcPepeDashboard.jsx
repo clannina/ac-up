@@ -78,7 +78,9 @@ export default function AcPepeDashboard() {
 
   const stato = ultimoRespiro ? statoRespiro(ultimoRespiro.bpm) : null;
   // Ogni terapia può avere più orari al giorno: contiamo le singole somministrazioni, non le terapie.
-  const occorrenzeOggi = terapie.flatMap((t) => (t.orari && t.orari.length > 0 ? t.orari : [""]).map((orario) => ({ terapiaId: t.id, orario })));
+  // Le terapie "a intervalli" (es. ogni 72 ore) contano solo se oggi è davvero il loro giorno.
+  const terapieDovuteOggi = terapie.filter((t) => t.frequenza !== "intervallo" || !t.prossima_dose || t.prossima_dose <= oggiISO());
+  const occorrenzeOggi = terapieDovuteOggi.flatMap((t) => (t.orari && t.orari.length > 0 ? t.orari : [""]).map((orario) => ({ terapiaId: t.id, orario })));
   const occorrenzeDaFare = occorrenzeOggi.filter((o) => !fatte[`${o.terapiaId}__${o.orario}`]).length;
 
   return (
