@@ -7,7 +7,7 @@ import AcPepeHeader from "../../components/AcPepeHeader.jsx";
 import { getUltimoRespiro, statoRespiro, getTerapie, getSomministrazioniData, getScadenze } from "../../lib/acPepe";
 import { getSpese } from "../../lib/acHome";
 
-const BACKGROUND = "linear-gradient(180deg, #FF914D 0%, #AB003E 100%)";
+const BACKGROUND = "linear-gradient(180deg, #EE6C04 0%, #AB003E 100%)";
 
 function oggiISO() {
   return new Date().toISOString().slice(0, 10);
