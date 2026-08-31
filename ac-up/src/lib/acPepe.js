@@ -62,7 +62,7 @@ export async function getTerapie(soloAttive = true) {
   return data ?? [];
 }
 
-export async function creaTerapia({ nome, dose, orari, note, ricettaFile }) {
+export async function creaTerapia({ nome, orariDosi, note, ricettaFile }) {
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData.user.id;
 
@@ -74,11 +74,14 @@ export async function creaTerapia({ nome, dose, orari, note, ricettaFile }) {
     ricetta_percorso = caricata.percorso;
   }
 
+  const listaValida = (orariDosi || []).filter((o) => o.orario);
+
   const { error } = await supabase.from("ac_pepe_terapie").insert({
     profile_id: userId,
     nome,
-    dose,
-    orari: orari && orari.length > 0 ? orari : [],
+    dose: listaValida[0]?.dose || null, // mantenuta per compatibilità con visualizzazioni vecchie
+    orari: listaValida.map((o) => o.orario),
+    orari_dosi: listaValida,
     note: note || null,
     ricetta_url,
     ricetta_percorso,
