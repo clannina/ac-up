@@ -62,7 +62,7 @@ export async function getTerapie(soloAttive = true) {
   return data ?? [];
 }
 
-export async function creaTerapia({ nome, orariDosi, note, ricettaFile }) {
+export async function creaTerapia({ nome, orariDosi, note, ricettaFile, frequenza, intervallo_giorni, prossima_dose }) {
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData.user.id;
 
@@ -83,6 +83,9 @@ export async function creaTerapia({ nome, orariDosi, note, ricettaFile }) {
     orari: listaValida.map((o) => o.orario),
     orari_dosi: listaValida,
     note: note || null,
+    frequenza: frequenza || "giornaliera",
+    intervallo_giorni: intervallo_giorni || null,
+    prossima_dose: prossima_dose || null,
     ricetta_url,
     ricetta_percorso,
   });
@@ -127,6 +130,18 @@ export async function rimuoviRicettaTerapia(terapiaId, ricettaPercorso) {
 
 export async function aggiornaTerapia(id, payload) {
   const { error } = await supabase.from("ac_pepe_terapie").update(payload).eq("id", id);
+  if (error) throw error;
+}
+
+// Per le terapie "a intervalli" (es. ogni 72 ore): sposta avanti la data della
+// prossima dose, di quanti giorni indicato in intervallo_giorni.
+export async function avanzaProssimaDose(terapiaId, intervalloGiorni) {
+  const prossima = new Date();
+  prossima.setDate(prossima.getDate() + intervalloGiorni);
+  const { error } = await supabase
+    .from("ac_pepe_terapie")
+    .update({ prossima_dose: prossima.toISOString().slice(0, 10) })
+    .eq("id", terapiaId);
   if (error) throw error;
 }
 
