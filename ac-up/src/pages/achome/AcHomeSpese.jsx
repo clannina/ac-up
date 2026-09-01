@@ -40,6 +40,7 @@ export default function AcHomeSpese() {
   const [filtroStorico, setFiltroStorico] = useState(null);
   const [storico, setStorico] = useState([]);
   const [caricandoStorico, setCaricandoStorico] = useState(false);
+  const [condiviseArretrate, setCondiviseArretrate] = useState([]);
 
   useEffect(() => {
     caricaCategorie();
@@ -59,6 +60,14 @@ export default function AcHomeSpese() {
   async function caricaSpese() {
     const lista = await getSpese({ mese: MESE_CORRENTE, anno: ANNO_CORRENTE, gruppo });
     setSpese(lista);
+
+    // Le spese condivise non ancora saldate restano visibili anche dopo il cambio mese:
+    // qui recuperiamo quelle di mesi precedenti (di questo gruppo) con quota ancora da restituire.
+    const tutte = await getSpese({ gruppo });
+    const idQuestoMese = new Set(lista.map((s) => s.id));
+    const rimastoDi = (s) => Math.max(0, Number(s.importo) / 2 - Number(s.importo_rimborsato || 0));
+    const arretrate = tutte.filter((s) => s.condivisa && rimastoDi(s) > 0 && !idQuestoMese.has(s.id));
+    setCondiviseArretrate(arretrate);
   }
 
   async function caricaTotaleGenerale() {
@@ -363,7 +372,8 @@ export default function AcHomeSpese() {
 
           {(() => {
             const rimastoDi = (s) => Math.max(0, Number(s.importo) / 2 - Number(s.importo_rimborsato || 0));
-            const nonSaldate = spese.filter((s) => s.condivisa && rimastoDi(s) > 0);
+            const tutteLeCondivise = [...spese, ...condiviseArretrate];
+            const nonSaldate = tutteLeCondivise.filter((s) => s.condivisa && rimastoDi(s) > 0);
             const doveVannaAnna = nonSaldate.filter((s) => s.persona === "Anna").reduce((t, s) => t + rimastoDi(s), 0);
             const doveAnnaVanna = nonSaldate.filter((s) => s.persona === "Vanna").reduce((t, s) => t + rimastoDi(s), 0);
             if (doveVannaAnna === 0 && doveAnnaVanna === 0) {
@@ -388,6 +398,71 @@ export default function AcHomeSpese() {
       )}
 
       <h2 className="font-display text-sm mb-2" style={{ color: "#fff" }}>Spese di questo mese</h2>
+
+      {condiviseArretrate.length > 0 && (
+        <div className="flex flex-col gap-2 mb-3">
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
+            Condivise di mesi precedenti, non ancora saldate:
+          </p>
+          {condiviseArretrate.map((s) => {
+            const quota = Number(s.importo) / 2;
+            const giaRestituito = Number(s.importo_rimborsato || 0);
+            const rimasto = Math.max(0, quota - giaRestituito);
+
+            return (
+              <div
+                key={s.id}
+                className={`${GLASS} rounded-2xl px-4 py-3`}
+                style={{ outline: editingId === s.id ? "2px solid rgba(255,255,255,0.6)" : "none", borderLeft: "4px solid #ffcf5c" }}
+              >
+                <div className="flex flex-col gap-2">
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: "#fff" }}>
+                      {s.ac_home_categorie?.nome || "—"} <span className="text-xs opacity-70">· condivisa</span>
+                    </p>
+                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
+                      {s.data} {s.persona ? `· pagato da ${s.persona}` : ""} {s.nota ? `· ${s.nota}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="font-mono-num font-semibold" style={{ color: "#fff" }}>€ {Number(s.importo).toFixed(2)}</p>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => handleModifica(s)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                        Modifica
+                      </button>
+                      <button onClick={() => handleElimina(s.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(224,82,82,0.35)", color: "#fff" }}>
+                        Elimina
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-2 pt-2 flex flex-wrap items-center gap-2" style={{ borderTop: "1px solid rgba(255,255,255,0.2)" }}>
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>
+                    Restituiti € {giaRestituito.toFixed(2)} di € {quota.toFixed(2)} · mancano <span className="font-mono-num font-bold text-sm" style={{ color: "#ffcf5c" }}>€ {rimasto.toFixed(2)}</span>
+                  </p>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder={`es. ${rimasto.toFixed(2)}`}
+                    value={importoParziale[s.id] ?? ""}
+                    onChange={(e) => setImportoParziale((prev) => ({ ...prev, [s.id]: e.target.value }))}
+                    className="w-24 rounded-lg px-2 py-1 text-xs font-mono-num"
+                    style={{ background: "#fff" }}
+                  />
+                  <button onClick={() => handleRegistraParziale(s)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                    Registra
+                  </button>
+                  <button onClick={() => handleSegnaCompleto(s)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.95)", color: T.forest }}>
+                    Salda tutto
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div className="flex flex-col gap-2">
         {spese.length === 0 && <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>Nessuna spesa registrata.</p>}
         {spese.map((s) => {
