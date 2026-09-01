@@ -171,8 +171,13 @@ export default function AcPepeTerapie() {
     }
   }
 
-  const terapieAttive = terapie.filter((t) => t.attiva);
-  const terapiePausa = terapie.filter((t) => !t.attiva);
+  // Ordina per orario più presto (prima terapia della giornata in cima), sia attive che in pausa.
+  function primoOrarioDi(t) {
+    return orariDosiDi(t)[0]?.orario || "99:99"; // senza orario finisce in fondo
+  }
+  const terapieOrdinate = [...terapie].sort((a, b) => primoOrarioDi(a).localeCompare(primoOrarioDi(b)));
+  const terapieAttive = terapieOrdinate.filter((t) => t.attiva);
+  const terapiePausa = terapieOrdinate.filter((t) => !t.attiva);
 
   return (
     <div className="min-h-screen pb-28 px-4 pt-6" style={{ background: BACKGROUND }}>
