@@ -60,14 +60,22 @@ export default function AcHomeSpese() {
   async function caricaSpese() {
     const lista = await getSpese({ mese: MESE_CORRENTE, anno: ANNO_CORRENTE, gruppo });
     setSpese(lista);
+    caricaCondiviseArretrate(lista);
+  }
 
-    // Le spese condivise non ancora saldate restano visibili anche dopo il cambio mese:
-    // qui recuperiamo quelle di mesi precedenti (di questo gruppo) con quota ancora da restituire.
-    const tutte = await getSpese({ gruppo });
-    const idQuestoMese = new Set(lista.map((s) => s.id));
-    const rimastoDi = (s) => Math.max(0, Number(s.importo) / 2 - Number(s.importo_rimborsato || 0));
-    const arretrate = tutte.filter((s) => s.condivisa && rimastoDi(s) > 0 && !idQuestoMese.has(s.id));
-    setCondiviseArretrate(arretrate);
+  // Isolata di proposito: se questa fallisce per qualsiasi motivo, non deve
+  // mai impedire il salvataggio/aggiornamento della lista principale sopra.
+  async function caricaCondiviseArretrate(listaMeseCorrente) {
+    try {
+      const tutte = await getSpese({ gruppo });
+      const idQuestoMese = new Set(listaMeseCorrente.map((s) => s.id));
+      const rimastoDi = (s) => Math.max(0, Number(s.importo) / 2 - Number(s.importo_rimborsato || 0));
+      const arretrate = tutte.filter((s) => s.condivisa && rimastoDi(s) > 0 && !idQuestoMese.has(s.id));
+      setCondiviseArretrate(arretrate);
+    } catch (err) {
+      console.error("Errore nel caricare le condivise arretrate:", err);
+      setCondiviseArretrate([]);
+    }
   }
 
   async function caricaTotaleGenerale() {
