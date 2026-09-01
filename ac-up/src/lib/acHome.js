@@ -30,8 +30,13 @@ export async function getSpese({ mese, anno, gruppo } = {}) {
 
   if (mese && anno) {
     const inizio = `${anno}-${String(mese).padStart(2, "0")}-01`;
-    const fine = `${anno}-${String(mese).padStart(2, "0")}-31`;
-    query = query.gte("data", inizio).lte("data", fine);
+    // Usiamo il primo giorno del mese SUCCESSIVO come limite superiore esclusivo,
+    // invece di calcolare l'ultimo giorno del mese corrente (bug precedente: "31" non
+    // esiste nei mesi da 30 giorni, es. settembre, causando un errore silenzioso).
+    const meseSuccessivo = mese === 12 ? 1 : mese + 1;
+    const annoSuccessivo = mese === 12 ? anno + 1 : anno;
+    const fineEsclusiva = `${annoSuccessivo}-${String(meseSuccessivo).padStart(2, "0")}-01`;
+    query = query.gte("data", inizio).lt("data", fineEsclusiva);
   }
   const { data, error } = await query;
   if (error) throw error;
@@ -363,8 +368,10 @@ export async function getEntrate(mese, anno) {
   let query = supabase.from("ac_home_entrate").select("*").order("data", { ascending: false });
   if (mese && anno) {
     const inizio = `${anno}-${String(mese).padStart(2, "0")}-01`;
-    const fine = `${anno}-${String(mese).padStart(2, "0")}-31`;
-    query = query.gte("data", inizio).lte("data", fine);
+    const meseSuccessivo = mese === 12 ? 1 : mese + 1;
+    const annoSuccessivo = mese === 12 ? anno + 1 : anno;
+    const fineEsclusiva = `${annoSuccessivo}-${String(meseSuccessivo).padStart(2, "0")}-01`;
+    query = query.gte("data", inizio).lt("data", fineEsclusiva);
   }
   const { data, error } = await query;
   if (error) throw error;
