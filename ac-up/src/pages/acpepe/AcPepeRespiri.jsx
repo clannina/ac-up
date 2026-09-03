@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceArea } from "recharts";
-import { Wind, Play, Square, RotateCcw, Trash2, Ruler, Scale } from "lucide-react";
+import { Wind, Play, Square, RotateCcw, Trash2, Ruler, Scale, Pencil } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import AcPepeHeader from "../../components/AcPepeHeader.jsx";
 import {
@@ -255,22 +255,24 @@ export default function AcPepeRespiri() {
         {!contando && !risultato && !modalitaManuale && (
           <>
             <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.85)" }}>
-              Conta i respiri di Pepe mentre dorme o è tranquillo. Premi Avvia, poi tocca il cerchio ad ogni respiro per {DURATA_CONTEGGIO} secondi.
+              Conta i respiri di Pepe mentre dorme o è tranquillo, oppure inserisci un valore già contato.
             </p>
-            <button
-              onClick={avviaConteggio}
-              className="mx-auto flex items-center gap-2 px-6 py-3 rounded-2xl font-display text-base"
-              style={{ background: "#fff", color: T.forest }}
-            >
-              <Play size={18} /> Avvia conteggio
-            </button>
-            <button
-              onClick={() => setModalitaManuale(true)}
-              className="mx-auto mt-3 block text-sm underline"
-              style={{ color: "rgba(255,255,255,0.85)" }}
-            >
-              Inserisci manualmente
-            </button>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={avviaConteggio}
+                className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl font-display text-base"
+                style={{ background: "#fff", color: T.forest }}
+              >
+                <Play size={18} /> Avvia monitoraggio
+              </button>
+              <button
+                onClick={() => setModalitaManuale(true)}
+                className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl font-display text-base"
+                style={{ background: "rgba(255,255,255,0.2)", color: "#fff", border: "1.5px solid rgba(255,255,255,0.5)" }}
+              >
+                <Pencil size={18} /> Inserisci manualmente
+              </button>
+            </div>
           </>
         )}
 
