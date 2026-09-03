@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Wind, Pill, CalendarClock, HeartPulse } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { useAuth } from "../../lib/AuthContext.jsx";
+import { PROPRIETARIO_ID } from "../../lib/ownership.js";
 import AcPepeHeader from "../../components/AcPepeHeader.jsx";
 import { getUltimoRespiro, statoRespiro, getTerapie, getSomministrazioniData, getScadenze } from "../../lib/acPepe";
 import { getSpese } from "../../lib/acHome";
@@ -41,6 +42,7 @@ function todayLabel() {
 
 export default function AcPepeDashboard() {
   const { session, profile } = useAuth();
+  const isProprietario = session?.user?.id === PROPRIETARIO_ID;
   const [ultimoRespiro, setUltimoRespiro] = useState(null);
   const [terapie, setTerapie] = useState([]);
   const [fatte, setFatte] = useState({});
@@ -135,14 +137,24 @@ export default function AcPepeDashboard() {
         )}
       </Link>
 
-      {/* Spese mediche (dati condivisi con AC Home) */}
-      <Link to="/ac-home/spese?gruppo=mediche" className={`${GLASS} block rounded-3xl p-4 mb-5`}>
-        <div className="flex items-center gap-2 mb-1">
-          <HeartPulse size={18} color="#fff" />
-          <p className="font-display text-sm" style={{ color: "#fff" }}>Spese mediche questo mese</p>
+      {/* Spese mediche (dati condivisi con AC Home) — cliccabile solo per la proprietaria di AC Home */}
+      {isProprietario ? (
+        <Link to="/ac-home/spese?gruppo=mediche" className={`${GLASS} block rounded-3xl p-4 mb-5`}>
+          <div className="flex items-center gap-2 mb-1">
+            <HeartPulse size={18} color="#fff" />
+            <p className="font-display text-sm" style={{ color: "#fff" }}>Spese mediche questo mese</p>
+          </div>
+          <p className="font-mono-num text-3xl" style={{ color: "#fff" }}>€ {speseMediche.toFixed(2)}</p>
+        </Link>
+      ) : (
+        <div className={`${GLASS} rounded-3xl p-4 mb-5`}>
+          <div className="flex items-center gap-2 mb-1">
+            <HeartPulse size={18} color="#fff" />
+            <p className="font-display text-sm" style={{ color: "#fff" }}>Spese mediche questo mese</p>
+          </div>
+          <p className="font-mono-num text-3xl" style={{ color: "#fff" }}>€ {speseMediche.toFixed(2)}</p>
         </div>
-        <p className="font-mono-num text-3xl" style={{ color: "#fff" }}>€ {speseMediche.toFixed(2)}</p>
-      </Link>
+      )}
 
       {/* Prossime scadenze */}
       <Link to="/ac-pepe/scadenze" className={`${GLASS} block rounded-3xl p-4 mb-5`}>
