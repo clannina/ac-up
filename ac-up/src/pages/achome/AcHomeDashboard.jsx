@@ -167,7 +167,7 @@ export default function AcHomeDashboard() {
 
       {/* Chi deve ancora quanto a chi, sulle spese condivise non saldate */}
       {(doveVannaAnna > 0 || doveAnnaVanna > 0) && (
-        <div className={`${GLASS} rounded-3xl p-4 mb-5`}>
+        <div className={`${GLASS} rounded-3xl p-4 mb-5`} style={{ borderLeft: "4px solid #ffcf5c" }}>
           <div className="flex items-center gap-2 mb-2">
             <Users size={18} color="#fff" />
             <p className="font-display text-sm" style={{ color: "#fff" }}>Spese condivise</p>
