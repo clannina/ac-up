@@ -156,15 +156,6 @@ export default function AcHomeDashboard() {
         })}
       </div>
 
-      {/* Totale entrate: card a parte, non un saldo netto unico con le spese */}
-      <Link to="/ac-home/entrate" className={`${GLASS} block rounded-3xl p-4 mb-5`}>
-        <div className="flex items-center gap-2 mb-1">
-          <Wallet size={18} color="#fff" />
-          <p className="font-display text-sm" style={{ color: "#fff" }}>Totale entrate di questo mese</p>
-        </div>
-        <p className="font-mono-num text-3xl" style={{ color: "#fff" }}>€ {totaleEntrate.toFixed(2)}</p>
-      </Link>
-
       {/* Chi deve ancora quanto a chi, sulle spese condivise non saldate */}
       {(doveVannaAnna > 0 || doveAnnaVanna > 0) && (
         <div className={`${GLASS} rounded-3xl p-4 mb-5`} style={{ borderLeft: "4px solid #ffcf5c" }}>
@@ -186,6 +177,15 @@ export default function AcHomeDashboard() {
           </div>
         </div>
       )}
+
+      {/* Totale entrate: card a parte, non un saldo netto unico con le spese */}
+      <Link to="/ac-home/entrate" className={`${GLASS} block rounded-3xl p-4 mb-5`}>
+        <div className="flex items-center gap-2 mb-1">
+          <Wallet size={18} color="#fff" />
+          <p className="font-display text-sm" style={{ color: "#fff" }}>Totale entrate di questo mese</p>
+        </div>
+        <p className="font-mono-num text-3xl" style={{ color: "#fff" }}>€ {totaleEntrate.toFixed(2)}</p>
+      </Link>
 
       {/* Riepilogo prossime scadenze */}
       <Link to="/ac-home/scadenze" className={`${GLASS} block rounded-3xl p-4 mb-5`}>
