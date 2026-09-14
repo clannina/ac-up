@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Home as HomeIcon, Car, Bike, HeartPulse, CalendarClock, Wallet, Receipt } from "lucide-react";
+import { Home as HomeIcon, Car, Bike, HeartPulse, CalendarClock, Wallet, Receipt, Users } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { useAuth } from "../../lib/AuthContext.jsx";
 import AcHomeHeader from "../../components/AcHomeHeader.jsx";
@@ -52,6 +52,8 @@ export default function AcHomeDashboard() {
   const [totali, setTotali] = useState({ casa: 0, auto: 0, scooter: 0, mediche: 0 });
   const [scadenze, setScadenze] = useState([]);
   const [totaleEntrate, setTotaleEntrate] = useState(0);
+  const [doveVannaAnna, setDoveVannaAnna] = useState(0);
+  const [doveAnnaVanna, setDoveAnnaVanna] = useState(0);
 
   const displayName = profile?.display_name || session?.user?.email?.split("@")[0] || "";
   const totaleSpeseMese = GRUPPI.reduce((tot, g) => tot + (totali[g.id] || 0), 0);
@@ -65,8 +67,19 @@ export default function AcHomeDashboard() {
       caricaTotali();
       caricaScadenze();
       caricaEntrate();
+      caricaCondivise();
     });
   }, []);
+
+  // Chi deve ancora quanto a chi: guarda TUTTE le spese condivise non ancora saldate,
+  // non solo quelle di questo mese (un debito resta finché non viene saldato).
+  async function caricaCondivise() {
+    const tutte = await getSpese({});
+    const rimastoDi = (s) => Math.max(0, Number(s.importo) / 2 - Number(s.importo_rimborsato || 0));
+    const nonSaldate = tutte.filter((s) => s.condivisa && rimastoDi(s) > 0);
+    setDoveVannaAnna(nonSaldate.filter((s) => s.persona === "Anna").reduce((tot, s) => tot + rimastoDi(s), 0));
+    setDoveAnnaVanna(nonSaldate.filter((s) => s.persona === "Vanna").reduce((tot, s) => tot + rimastoDi(s), 0));
+  }
 
   async function caricaEntrate() {
     const entrate = await getEntrate(MESE_CORRENTE, ANNO_CORRENTE);
@@ -151,6 +164,28 @@ export default function AcHomeDashboard() {
         </div>
         <p className="font-mono-num text-3xl" style={{ color: "#fff" }}>€ {totaleEntrate.toFixed(2)}</p>
       </Link>
+
+      {/* Chi deve ancora quanto a chi, sulle spese condivise non saldate */}
+      {(doveVannaAnna > 0 || doveAnnaVanna > 0) && (
+        <div className={`${GLASS} rounded-3xl p-4 mb-5`}>
+          <div className="flex items-center gap-2 mb-2">
+            <Users size={18} color="#fff" />
+            <p className="font-display text-sm" style={{ color: "#fff" }}>Spese condivise</p>
+          </div>
+          <div className="flex flex-col gap-1">
+            {doveVannaAnna > 0 && (
+              <p className="text-sm" style={{ color: "#fff" }}>
+                Vanna deve ancora dare ad Anna: <span className="font-mono-num font-semibold">€ {doveVannaAnna.toFixed(2)}</span>
+              </p>
+            )}
+            {doveAnnaVanna > 0 && (
+              <p className="text-sm" style={{ color: "#fff" }}>
+                Anna deve ancora dare a Vanna: <span className="font-mono-num font-semibold">€ {doveAnnaVanna.toFixed(2)}</span>
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Riepilogo prossime scadenze */}
       <Link to="/ac-home/scadenze" className={`${GLASS} block rounded-3xl p-4 mb-5`}>
