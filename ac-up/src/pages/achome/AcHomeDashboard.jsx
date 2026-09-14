@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Home as HomeIcon, Car, Bike, HeartPulse, CalendarClock, Wallet } from "lucide-react";
+import { Home as HomeIcon, Car, Bike, HeartPulse, CalendarClock, Wallet, Receipt } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { useAuth } from "../../lib/AuthContext.jsx";
 import AcHomeHeader from "../../components/AcHomeHeader.jsx";
@@ -16,7 +16,7 @@ const GRUPPI = [
   { id: "casa", label: "Casa", icon: HomeIcon },
   { id: "auto", label: "Auto", icon: Car },
   { id: "scooter", label: "Scooter", icon: Bike },
-  { id: "mediche", label: "Spese mediche", icon: HeartPulse },
+  { id: "mediche", label: "Veterinarie", icon: HeartPulse },
 ];
 
 const oggi = new Date();
@@ -51,9 +51,10 @@ export default function AcHomeDashboard() {
   const { session, profile } = useAuth();
   const [totali, setTotali] = useState({ casa: 0, auto: 0, scooter: 0, mediche: 0 });
   const [scadenze, setScadenze] = useState([]);
-  const [residuo, setResiduo] = useState(0);
+  const [totaleEntrate, setTotaleEntrate] = useState(0);
 
   const displayName = profile?.display_name || session?.user?.email?.split("@")[0] || "";
+  const totaleSpeseMese = GRUPPI.reduce((tot, g) => tot + (totali[g.id] || 0), 0);
 
   useEffect(() => {
     // Genera (se non gia' fatto questo mese) le spese e le entrate ricorrenti, poi carica tutto.
@@ -63,16 +64,13 @@ export default function AcHomeDashboard() {
     ]).finally(() => {
       caricaTotali();
       caricaScadenze();
-      caricaResiduo();
+      caricaEntrate();
     });
   }, []);
 
-  async function caricaResiduo() {
+  async function caricaEntrate() {
     const entrate = await getEntrate(MESE_CORRENTE, ANNO_CORRENTE);
-    const totaleEntrate = entrate.reduce((tot, e) => tot + Number(e.importo), 0);
-    const tutteLeSpese = await Promise.all(GRUPPI.map((g) => getSpese({ mese: MESE_CORRENTE, anno: ANNO_CORRENTE, gruppo: g.id })));
-    const totaleSpese = tutteLeSpese.flat().reduce((tot, s) => tot + Number(s.importo), 0);
-    setResiduo(totaleEntrate - totaleSpese);
+    setTotaleEntrate(entrate.reduce((tot, e) => tot + Number(e.importo), 0));
   }
 
   async function caricaTotali() {
@@ -110,15 +108,48 @@ export default function AcHomeDashboard() {
         </h1>
       </div>
 
-      {/* Residuo mensile: entrate - spese */}
+      {/* Totale spese del mese, con la scomposizione per categoria subito sotto */}
+      <div className={`${GLASS} rounded-3xl p-4 mb-3`}>
+        <div className="flex items-center gap-2 mb-1">
+          <Receipt size={18} color="#fff" />
+          <p className="font-display text-sm" style={{ color: "#fff" }}>Totale spese di questo mese</p>
+        </div>
+        <p className="font-mono-num text-3xl" style={{ color: "#fff" }}>€ {totaleSpeseMese.toFixed(2)}</p>
+      </div>
+
+      <div className="flex flex-col gap-2 mb-5">
+        {GRUPPI.map((g) => {
+          const Icon = g.icon;
+          return (
+            <Link
+              key={g.id}
+              to={`/ac-home/spese?gruppo=${g.id}`}
+              className={`${GLASS} flex items-center justify-between rounded-2xl px-4 py-3`}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center"
+                  style={{ background: "#fff" }}
+                >
+                  <Icon size={18} color={T.forest} />
+                </div>
+                <p className="font-display text-sm" style={{ color: "#fff" }}>{g.label}</p>
+              </div>
+              <p className="font-mono-num text-base" style={{ color: "#fff" }}>
+                € {(totali[g.id] || 0).toFixed(2)}
+              </p>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Totale entrate: card a parte, non un saldo netto unico con le spese */}
       <Link to="/ac-home/entrate" className={`${GLASS} block rounded-3xl p-4 mb-5`}>
         <div className="flex items-center gap-2 mb-1">
           <Wallet size={18} color="#fff" />
-          <p className="font-display text-sm" style={{ color: "#fff" }}>Residuo di questo mese</p>
+          <p className="font-display text-sm" style={{ color: "#fff" }}>Totale entrate di questo mese</p>
         </div>
-        <p className="font-mono-num text-3xl" style={{ color: residuo >= 0 ? "#fff" : "#ffd0d0" }}>
-          € {residuo.toFixed(2)}
-        </p>
+        <p className="font-mono-num text-3xl" style={{ color: "#fff" }}>€ {totaleEntrate.toFixed(2)}</p>
       </Link>
 
       {/* Riepilogo prossime scadenze */}
@@ -143,38 +174,6 @@ export default function AcHomeDashboard() {
           </div>
         )}
       </Link>
-
-      {/* Card Casa / Auto / Scooter con totale speso del mese */}
-      <div className="flex flex-col gap-3">
-        {GRUPPI.map((g) => {
-          const Icon = g.icon;
-          return (
-            <Link
-              key={g.id}
-              to={`/ac-home/spese?gruppo=${g.id}`}
-              className={`${GLASS} flex items-center justify-between rounded-3xl p-4`}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center"
-                  style={{ background: "#fff" }}
-                >
-                  <Icon size={20} color={T.forest} />
-                </div>
-                <p className="font-display text-base" style={{ color: "#fff" }}>{g.label}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.7)" }}>
-                  Speso questo mese
-                </p>
-                <p className="font-mono-num text-lg" style={{ color: "#fff" }}>
-                  € {totali[g.id].toFixed(2)}
-                </p>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
     </div>
   );
 }
