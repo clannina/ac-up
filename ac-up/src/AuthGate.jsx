@@ -13,6 +13,8 @@ export default function AuthGate() {
   const isAcUp = location.pathname === "/ac-up" || ["/menu", "/ricette", "/spesa", "/salute", "/profilo"].includes(location.pathname);
   const isAcHome = location.pathname.startsWith("/ac-home");
   const isAcPepe = location.pathname.startsWith("/ac-pepe");
+  // "Soldi in coppia" è l'unica pagina di AC Home condivisa con Vanna.
+  const isCoppia = location.pathname.startsWith("/ac-home/coppia");
   if (session === undefined && !authError) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: T.paper, color: T.stone }}>
@@ -25,15 +27,16 @@ export default function AuthGate() {
   }
   // AC UP e AC Home restano riservati al proprietario: chiunque altro
   // (es. una persona con cui condividi solo AcPepe) viene rimandato lì.
+  // Eccezione: la pagina "Soldi in coppia", aperta anche a Vanna (senza la barra di AC Home).
   const isProprietario = session.user?.id === PROPRIETARIO_ID;
-  if ((isAcUp || isAcHome) && !isProprietario) {
+  if ((isAcUp || (isAcHome && !isCoppia)) && !isProprietario) {
     return <Navigate to="/ac-pepe" replace />;
   }
   return (
     <div className={`min-h-screen ${isAcUp ? "pb-20" : ""}`}>
       <Outlet />
       {isAcUp && <NavBar />}
-      {isAcHome && <AcHomeNavBar />}
+      {isAcHome && isProprietario && <AcHomeNavBar />}
       {isAcPepe && <AcPepeNavBar />}
     </div>
   );
