@@ -16,6 +16,7 @@ import AcHomeProfilo from "./pages/achome/AcHomeProfilo.jsx";
 import AcHomeEntrate from "./pages/achome/AcHomeEntrate.jsx";
 import AcHomeStorico from "./pages/achome/AcHomeStorico.jsx";
 import AcHomeCoppia from "./pages/achome/AcHomeCoppia.jsx";
+import AcHomeImporta from "./pages/achome/AcHomeImporta.jsx";
 import AcPepeDashboard from "./pages/acpepe/AcPepeDashboard.jsx";
 import AcPepeRespiri from "./pages/acpepe/AcPepeRespiri.jsx";
 import AcPepeTerapie from "./pages/acpepe/AcPepeTerapie.jsx";
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="ac-home/entrate" element={<AcHomeEntrate />} />
         <Route path="ac-home/storico" element={<AcHomeStorico />} />
         <Route path="ac-home/coppia" element={<AcHomeCoppia />} />
+        <Route path="ac-home/importa" element={<AcHomeImporta />} />
         <Route path="ac-pepe" element={<AcPepeDashboard />} />
         <Route path="ac-pepe/respiri" element={<AcPepeRespiri />} />
         <Route path="ac-pepe/terapie" element={<AcPepeTerapie />} />
