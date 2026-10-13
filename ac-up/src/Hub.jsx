@@ -30,8 +30,6 @@ export default function Hub() {
   // Finché non sappiamo chi è (sessione non ancora caricata), mostriamo tutto:
   // le rotte protette controllano comunque l'accesso reale una volta dentro.
   const isProprietario = session === undefined || session === null || session?.user?.id === PROPRIETARIO_ID;
-  // Chi è loggato ma non è il proprietario (Vanna) vede anche "Soldi in coppia".
-  const isOspite = !!session && session?.user?.id !== PROPRIETARIO_ID;
 
   return (
     <div className="bg-gradient-to-b from-[#14b8a6] via-[#f2f2f0] to-[#f2b705] min-h-screen flex flex-col items-center px-5 py-3">
@@ -58,14 +56,13 @@ export default function Hub() {
           subtitle="Salute e terapie di Pepe"
           logo="/icons/ac-pepe-logo-transparent.png"
         />
-        {isOspite && (
-          <AppCard
-            to="/ac-home/coppia"
-            title="Soldi in coppia"
-            subtitle="Conto comune, quote e bilancio del mese"
-            logo="/icons/ac-home-logo-transparent.png"
-          />
-        )}
+        {/* Soldi in coppia: visibile a entrambe (Anna e Vanna) */}
+        <AppCard
+          to="/ac-home/coppia"
+          title="Soldi in coppia"
+          subtitle="Conto comune, quote e bilancio del mese"
+          logo="/icons/ac-home-logo-transparent.png"
+        />
         {isProprietario && (
           <AppCard
             to="/ac-up"
