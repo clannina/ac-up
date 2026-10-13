@@ -1,478 +1,114 @@
 import { supabase } from "../supabaseClient";
 
-// --- Categorie ---
-// gruppo: 'casa' | 'auto' | 'scooter'
-export async function getCategorie(gruppo) {
-  let query = supabase.from("ac_home_categorie").select("*").order("nome");
-  if (gruppo) query = query.eq("gruppo", gruppo);
-  const { data, error } = await query;
+// Dati della sezione "Soldi in coppia" di AC Home, condivisa tra Anna e Vanna.
+// L'accesso reale è controllato dalle policy RLS (tabella ac_coppia_autorizzati).
+
+function check(error) {
   if (error) throw error;
-  return data;
 }
 
-export async function creaCategoria(gruppo, nome) {
-  const { data: userData } = await supabase.auth.getUser();
+export async function getMese(anno, mese) {
   const { data, error } = await supabase
-    .from("ac_home_categorie")
-    .insert({ gruppo, nome, user_id: userData.user.id })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-// --- Spese ---
-export async function getSpese({ mese, anno, gruppo } = {}) {
-  let query = supabase
-    .from("ac_home_spese")
-    .select("*, ac_home_categorie(nome, gruppo)")
-    .order("data", { ascending: false });
-
-  if (mese && anno) {
-    const inizio = `${anno}-${String(mese).padStart(2, "0")}-01`;
-    // Usiamo il primo giorno del mese SUCCESSIVO come limite superiore esclusivo,
-    // invece di calcolare l'ultimo giorno del mese corrente (bug precedente: "31" non
-    // esiste nei mesi da 30 giorni, es. settembre, causando un errore silenzioso).
-    const meseSuccessivo = mese === 12 ? 1 : mese + 1;
-    const annoSuccessivo = mese === 12 ? anno + 1 : anno;
-    const fineEsclusiva = `${annoSuccessivo}-${String(meseSuccessivo).padStart(2, "0")}-01`;
-    query = query.gte("data", inizio).lt("data", fineEsclusiva);
-  }
-  const { data, error } = await query;
-  if (error) throw error;
-  return gruppo ? data.filter((s) => s.ac_home_categorie?.gruppo === gruppo) : data;
-}
-
-export async function creaSpesa({ categoria_id, importo, data, nota, foto_url, ricorrente_id, persona, condivisa, rimborsato }) {
-  const { data: userData } = await supabase.auth.getUser();
-  const { data: spesa, error } = await supabase
-    .from("ac_home_spese")
-    .insert({ categoria_id, importo, data, nota, foto_url, ricorrente_id: ricorrente_id || null, persona: persona || null, condivisa: !!condivisa, rimborsato: !!rimborsato, user_id: userData.user.id })
-    .select()
-    .single();
-  if (error) throw error;
-  return spesa;
-}
-
-export async function eliminaSpesa(id) {
-  const { error } = await supabase.from("ac_home_spese").delete().eq("id", id);
-  if (error) throw error;
-}
-
-export async function aggiornaSpesa(id, { categoria_id, importo, data, nota, foto_url, persona, condivisa, rimborsato }) {
-  const { data: spesa, error } = await supabase
-    .from("ac_home_spese")
-    .update({ categoria_id, importo, data, nota, foto_url, persona: persona || null, condivisa: !!condivisa, rimborsato: !!rimborsato })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw error;
-  return spesa;
-}
-
-// Registra un rimborso, anche parziale, su una spesa condivisa.
-// "importoAggiunto" si somma a quanto gia' restituito in precedenza; una volta raggiunta
-// (o superata) la quota dovuta, la spesa risulta interamente rimborsata.
-export async function registraRimborso(id, importoAggiunto) {
-  const { data: attuale, error: errLettura } = await supabase
-    .from("ac_home_spese")
-    .select("importo, importo_rimborsato")
-    .eq("id", id)
-    .single();
-  if (errLettura) throw errLettura;
-
-  const quota = Number(attuale.importo) / 2;
-  const nuovoTotale = Math.min(quota, Number(attuale.importo_rimborsato || 0) + Number(importoAggiunto));
-
-  const { error } = await supabase
-    .from("ac_home_spese")
-    .update({ importo_rimborsato: nuovoTotale, rimborsato: nuovoTotale >= quota })
-    .eq("id", id);
-  if (error) throw error;
-}
-
-// Segna l'intera quota come restituita in un colpo solo.
-export async function segnaRimborsoCompleto(id, importoSpesa) {
-  const quota = Number(importoSpesa) / 2;
-  const { error } = await supabase
-    .from("ac_home_spese")
-    .update({ importo_rimborsato: quota, rimborsato: true })
-    .eq("id", id);
-  if (error) throw error;
-}
-
-// Azzera il rimborso registrato (utile se ci si e' sbagliati)
-export async function azzeraRimborso(id) {
-  const { error } = await supabase.from("ac_home_spese").update({ importo_rimborsato: 0, rimborsato: false }).eq("id", id);
-  if (error) throw error;
-}
-
-// --- Upload foto scontrino ---
-export async function caricaFotoScontrino(file) {
-  const { data: userData } = await supabase.auth.getUser();
-  const path = `${userData.user.id}/${Date.now()}-${file.name}`;
-  const { error } = await supabase.storage.from("ac-home-scontrini").upload(path, file);
-  if (error) throw error;
-  return path;
-}
-
-export async function getUrlFotoScontrino(path) {
-  const { data, error } = await supabase.storage
-    .from("ac-home-scontrini")
-    .createSignedUrl(path, 60 * 60); // valida 1 ora
-  if (error) throw error;
-  return data.signedUrl;
-}
-
-// Somma di tutte le spese mai registrate per un gruppo (casa/auto/scooter), senza filtro di mese.
-export async function getTotaleGenerale(gruppo) {
-  const { data, error } = await supabase
-    .from("ac_home_spese")
-    .select("importo, ac_home_categorie(gruppo)");
-  if (error) throw error;
-  return data
-    .filter((s) => s.ac_home_categorie?.gruppo === gruppo)
-    .reduce((tot, s) => tot + Number(s.importo), 0);
-}
-
-// --- Budget ---
-export async function getBudget(mese, anno) {
-  const { data, error } = await supabase
-    .from("ac_home_budget")
-    .select("*, ac_home_categorie(nome, gruppo)")
-    .eq("mese", mese)
-    .eq("anno", anno);
-  if (error) throw error;
-  return data;
-}
-
-export async function impostaBudget({ categoria_id, mese, anno, importo }) {
-  const { data: userData } = await supabase.auth.getUser();
-  const { data: esistente } = await supabase
-    .from("ac_home_budget")
-    .select("id")
-    .eq("categoria_id", categoria_id)
-    .eq("mese", mese)
+    .from("ac_coppia_mesi")
+    .select("*")
     .eq("anno", anno)
+    .eq("mese", mese)
     .maybeSingle();
+  check(error);
+  return data;
+}
 
-  if (esistente) {
-    const { data, error } = await supabase
-      .from("ac_home_budget")
-      .update({ importo })
-      .eq("id", esistente.id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  }
-
+async function getMesePrecedente(anno, mese) {
   const { data, error } = await supabase
-    .from("ac_home_budget")
-    .insert({ categoria_id, mese, anno, importo, user_id: userData.user.id })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+    .from("ac_coppia_mesi")
+    .select("*")
+    .or(`anno.lt.${anno},and(anno.eq.${anno},mese.lt.${mese})`)
+    .order("anno", { ascending: false })
+    .order("mese", { ascending: false })
+    .limit(1);
+  check(error);
+  return data?.[0] || null;
 }
 
-// --- Spese ricorrenti (mutuo, rate, abbonamenti...) ---
-export async function getRicorrenti() {
+export async function getVoci(anno, mese) {
   const { data, error } = await supabase
-    .from("ac_home_ricorrenti")
-    .select("*, ac_home_categorie(nome, gruppo)")
-    .order("created_at");
-  if (error) throw error;
-  return data;
+    .from("ac_coppia_voci")
+    .select("*")
+    .eq("anno", anno)
+    .eq("mese", mese)
+    .order("ordine", { ascending: true })
+    .order("created_at", { ascending: true });
+  check(error);
+  return data || [];
 }
 
-export async function creaRicorrente({ categoria_id, importo, descrizione, giorno_mese, fino_al, persona }) {
-  const { data: userData } = await supabase.auth.getUser();
-  const { data, error } = await supabase
-    .from("ac_home_ricorrenti")
-    .insert({ categoria_id, importo, descrizione, giorno_mese: giorno_mese || 1, fino_al: fino_al || null, persona: persona || null, user_id: userData.user.id })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
+// Apre un mese. Se non esiste ancora lo crea copiando dal mese precedente
+// entrate, metodo di divisione, quote, imprevisti e tutte le voci
+// (tranne gli abbonamenti segnati "da eliminare"). La checklist riparte vuota.
+export async function apriMese(anno, mese) {
+  const esistente = await getMese(anno, mese);
+  if (esistente) return { mese: esistente, voci: await getVoci(anno, mese) };
 
-export async function toggleRicorrente(id, attiva) {
-  const { error } = await supabase.from("ac_home_ricorrenti").update({ attiva }).eq("id", id);
-  if (error) throw error;
-}
-
-export async function eliminaRicorrente(id) {
-  const { error } = await supabase.from("ac_home_ricorrenti").delete().eq("id", id);
-  if (error) throw error;
-}
-
-export async function aggiornaRicorrente(id, { categoria_id, importo, descrizione, giorno_mese, fino_al, persona }) {
-  const { data, error } = await supabase
-    .from("ac_home_ricorrenti")
-    .update({ categoria_id, importo, descrizione, giorno_mese: giorno_mese || 1, fino_al: fino_al || null, persona: persona || null })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-// --- Veicoli ---
-export async function getVeicoli() {
-  const { data, error } = await supabase.from("ac_home_veicoli").select("*").order("nome");
-  if (error) throw error;
-  return data;
-}
-
-export async function creaVeicolo({ nome, targa, tipo }) {
-  const { data: userData } = await supabase.auth.getUser();
-  const { data, error } = await supabase
-    .from("ac_home_veicoli")
-    .insert({ nome, targa, tipo, user_id: userData.user.id })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-export async function eliminaVeicolo(id) {
-  const { error } = await supabase.from("ac_home_veicoli").delete().eq("id", id);
-  if (error) throw error;
-}
-
-export async function aggiornaVeicolo(id, { nome, targa, tipo }) {
-  const { data, error } = await supabase
-    .from("ac_home_veicoli")
-    .update({ nome, targa, tipo })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-// --- Scadenze (es. revisione, assicurazione...) ---
-export async function getScadenze() {
-  const { data, error } = await supabase
-    .from("ac_home_scadenze")
-    .select("*, ac_home_categorie(nome, gruppo), ac_home_veicoli(nome, targa, tipo)")
-    .order("data_scadenza");
-  if (error) throw error;
-  return data;
-}
-
-export async function creaScadenza({ categoria_id, veicolo_id, titolo, data_scadenza, ricorrenza, persona }) {
-  const { data: userData } = await supabase.auth.getUser();
-  const { data, error } = await supabase
-    .from("ac_home_scadenze")
-    .insert({
-      categoria_id: categoria_id || null,
-      veicolo_id: veicolo_id || null,
-      titolo,
-      data_scadenza,
-      ricorrenza: ricorrenza || "una_tantum",
-      persona: persona || null,
-      user_id: userData.user.id,
-    })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-export async function eliminaScadenza(id) {
-  const { error } = await supabase.from("ac_home_scadenze").delete().eq("id", id);
-  if (error) throw error;
-}
-
-export async function aggiornaScadenza(id, { categoria_id, veicolo_id, titolo, data_scadenza, ricorrenza, persona }) {
-  const { data, error } = await supabase
-    .from("ac_home_scadenze")
-    .update({
-      categoria_id: categoria_id || null,
-      veicolo_id: veicolo_id || null,
-      titolo,
-      data_scadenza,
-      ricorrenza: ricorrenza || "una_tantum",
-      persona: persona || null,
-    })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-// --- Notifiche push ---
-// Salva (o aggiorna, se lo stesso dispositivo si re-iscrive) l'iscrizione alle notifiche push per l'utente corrente.
-export async function salvaPushSubscription(subscription) {
-  const { data: userData } = await supabase.auth.getUser();
-  const raw = subscription.toJSON();
-  const { error } = await supabase.from("ac_home_push_subscriptions").upsert(
-    {
-      endpoint: raw.endpoint,
-      p256dh: raw.keys.p256dh,
-      auth: raw.keys.auth,
-      user_id: userData.user.id,
-    },
-    { onConflict: "endpoint" }
-  );
-  if (error) throw error;
-}
-
-
-// Genera automaticamente, per il mese/anno indicati, le spese derivate dalle ricorrenti attive
-// che non sono ancora state create per quel mese (controllo tramite ricorrente_id).
-// Va chiamata all'apertura dell'app: se una ricorrente e' gia' stata generata questo mese, non duplica nulla.
-export async function generaSpeseRicorrentiDelMese(mese, anno) {
-  const ricorrenti = await getRicorrenti();
-  const attive = ricorrenti.filter((r) => r.attiva);
-  if (attive.length === 0) return;
-
-  // Genera solo le ricorrenti che NON risultano gia' generate per questo mese/anno
-  // (controllo sulla ricorrente stessa, cosi' anche se l'utente cancella la spesa generata non viene ricreata),
-  // e che non hanno gia' superato la data di fine (es. fine di un finanziamento).
-  const inizioMese = new Date(anno, mese - 1, 1);
-  const daGenerare = attive.filter((r) => {
-    const giaGenerata = r.ultimo_mese_generato === mese && r.ultimo_anno_generato === anno;
-    const scaduta = r.fino_al && new Date(r.fino_al) < inizioMese;
-    return !giaGenerata && !scaduta;
-  });
-  if (daGenerare.length === 0) return;
-
-  const ultimoGiorno = new Date(anno, mese, 0).getDate();
-  const { data: userData } = await supabase.auth.getUser();
-
-  for (const r of daGenerare) {
-    const giorno = Math.min(r.giorno_mese, ultimoGiorno);
-    const data = `${anno}-${String(mese).padStart(2, "0")}-${String(giorno).padStart(2, "0")}`;
-    await supabase.from("ac_home_spese").insert({
-      categoria_id: r.categoria_id,
-      importo: r.importo,
-      data,
-      nota: r.descrizione,
-      ricorrente_id: r.id,
-      persona: r.persona || null,
-      user_id: userData.user.id,
+  const prec = await getMesePrecedente(anno, mese);
+  const nuovo = { anno, mese };
+  if (prec) {
+    [
+      "stipendio_a",
+      "stipendio_b",
+      "altre_entrate",
+      "metodo",
+      "quota_a",
+      "quota_b",
+      "imprevisti_tipo",
+      "imprevisti_valore",
+    ].forEach((k) => {
+      nuovo[k] = prec[k];
     });
-    await supabase
-      .from("ac_home_ricorrenti")
-      .update({ ultimo_mese_generato: mese, ultimo_anno_generato: anno })
-      .eq("id", r.id);
   }
-}
 
-// --- Entrate ---
-export async function getEntrate(mese, anno) {
-  let query = supabase.from("ac_home_entrate").select("*").order("data", { ascending: false });
-  if (mese && anno) {
-    const inizio = `${anno}-${String(mese).padStart(2, "0")}-01`;
-    const meseSuccessivo = mese === 12 ? 1 : mese + 1;
-    const annoSuccessivo = mese === 12 ? anno + 1 : anno;
-    const fineEsclusiva = `${annoSuccessivo}-${String(meseSuccessivo).padStart(2, "0")}-01`;
-    query = query.gte("data", inizio).lt("data", fineEsclusiva);
+  const { data, error } = await supabase.from("ac_coppia_mesi").insert(nuovo).select().single();
+  if (error) {
+    // Il mese è stato creato nello stesso momento dall'altra persona: lo rileggiamo.
+    if (error.code === "23505") {
+      return { mese: await getMese(anno, mese), voci: await getVoci(anno, mese) };
+    }
+    throw error;
   }
-  const { data, error } = await query;
-  if (error) throw error;
-  return data;
-}
 
-export async function creaEntrata({ importo, descrizione, data, entrata_ricorrente_id, persona }) {
-  const { data: userData } = await supabase.auth.getUser();
-  const { data: entrata, error } = await supabase
-    .from("ac_home_entrate")
-    .insert({ importo, descrizione, data, entrata_ricorrente_id: entrata_ricorrente_id || null, persona: persona || null, user_id: userData.user.id })
-    .select()
-    .single();
-  if (error) throw error;
-  return entrata;
-}
-
-export async function eliminaEntrata(id) {
-  const { error } = await supabase.from("ac_home_entrate").delete().eq("id", id);
-  if (error) throw error;
-}
-
-export async function aggiornaEntrata(id, { importo, descrizione, data, persona }) {
-  const { data: entrata, error } = await supabase
-    .from("ac_home_entrate")
-    .update({ importo, descrizione, data, persona: persona || null })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw error;
-  return entrata;
-}
-
-// --- Entrate ricorrenti (es. stipendio) ---
-export async function getEntrateRicorrenti() {
-  const { data, error } = await supabase.from("ac_home_entrate_ricorrenti").select("*").order("created_at");
-  if (error) throw error;
-  return data;
-}
-
-export async function creaEntrataRicorrente({ importo, descrizione, giorno_mese, persona }) {
-  const { data: userData } = await supabase.auth.getUser();
-  const { data, error } = await supabase
-    .from("ac_home_entrate_ricorrenti")
-    .insert({ importo, descrizione, giorno_mese: giorno_mese || 1, persona: persona || null, user_id: userData.user.id })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-export async function toggleEntrataRicorrente(id, attiva) {
-  const { error } = await supabase.from("ac_home_entrate_ricorrenti").update({ attiva }).eq("id", id);
-  if (error) throw error;
-}
-
-export async function eliminaEntrataRicorrente(id) {
-  const { error } = await supabase.from("ac_home_entrate_ricorrenti").delete().eq("id", id);
-  if (error) throw error;
-}
-
-export async function aggiornaEntrataRicorrente(id, { importo, descrizione, giorno_mese, persona }) {
-  const { data, error } = await supabase
-    .from("ac_home_entrate_ricorrenti")
-    .update({ importo, descrizione, giorno_mese: giorno_mese || 1, persona: persona || null })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-// Genera automaticamente, per il mese/anno indicati, le entrate derivate dalle entrate ricorrenti attive
-// che non sono ancora state create per quel mese (stessa logica delle spese ricorrenti).
-export async function generaEntrateRicorrentiDelMese(mese, anno) {
-  const ricorrenti = await getEntrateRicorrenti();
-  const attive = ricorrenti.filter((r) => r.attiva);
-  if (attive.length === 0) return;
-
-  const daGenerare = attive.filter(
-    (r) => !(r.ultimo_mese_generato === mese && r.ultimo_anno_generato === anno)
-  );
-  if (daGenerare.length === 0) return;
-
-  const ultimoGiorno = new Date(anno, mese, 0).getDate();
-  const { data: userData } = await supabase.auth.getUser();
-
-  for (const r of daGenerare) {
-    const giorno = Math.min(r.giorno_mese, ultimoGiorno);
-    const data = `${anno}-${String(mese).padStart(2, "0")}-${String(giorno).padStart(2, "0")}`;
-    await supabase.from("ac_home_entrate").insert({
-      importo: r.importo,
-      data,
-      descrizione: r.descrizione,
-      entrata_ricorrente_id: r.id,
-      persona: r.persona || null,
-      user_id: userData.user.id,
-    });
-    await supabase
-      .from("ac_home_entrate_ricorrenti")
-      .update({ ultimo_mese_generato: mese, ultimo_anno_generato: anno })
-      .eq("id", r.id);
+  if (prec) {
+    const vociPrec = await getVoci(prec.anno, prec.mese);
+    const daCopiare = vociPrec
+      .filter((v) => !(v.tipo === "abbonamento" && v.da_eliminare))
+      .map((v) => ({ anno, mese, tipo: v.tipo, nome: v.nome, importo: v.importo, ordine: v.ordine }));
+    if (daCopiare.length > 0) {
+      const { error: errVoci } = await supabase.from("ac_coppia_voci").insert(daCopiare);
+      check(errVoci);
+    }
   }
+
+  return { mese: data, voci: await getVoci(anno, mese) };
+}
+
+export async function aggiornaMese(id, campi) {
+  const { error } = await supabase
+    .from("ac_coppia_mesi")
+    .update({ ...campi, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  check(error);
+}
+
+export async function creaVoce(voce) {
+  const { data, error } = await supabase.from("ac_coppia_voci").insert(voce).select().single();
+  check(error);
+  return data;
+}
+
+export async function aggiornaVoce(id, campi) {
+  const { error } = await supabase.from("ac_coppia_voci").update(campi).eq("id", id);
+  check(error);
+}
+
+export async function eliminaVoce(id) {
+  const { error } = await supabase.from("ac_coppia_voci").delete().eq("id", id);
+  check(error);
 }
