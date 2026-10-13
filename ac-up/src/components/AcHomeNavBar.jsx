@@ -12,11 +12,11 @@ const BILANCIO = [
 ];
 
 const LINKS = [
-  { to: "/ac-home/entrate", label: "Bilancio", icon: Scale, gruppo: BILANCIO },
   { to: "/ac-home/spese", label: "Spese", icon: Receipt },
+  { to: "/ac-home/coppia", label: "Coppia", icon: HeartHandshake },
+  { to: "/ac-home/entrate", label: "Bilancio", icon: Scale, gruppo: BILANCIO },
   { to: "/ac-home/ricorrenti", label: "Ricorr.", icon: Repeat },
   { to: "/ac-home/scadenze", label: "Scad.", icon: CalendarClock },
-  { to: "/ac-home/coppia", label: "Coppia", icon: HeartHandshake },
 ];
 
 const STILE_ATTIVO = { background: "rgba(255,255,255,0.95)", color: T.forest };
