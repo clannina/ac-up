@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Receipt, PiggyBank, Repeat, CalendarClock, Wallet } from "lucide-react";
+import { Receipt, PiggyBank, Repeat, CalendarClock, Wallet, HeartHandshake } from "lucide-react";
 import { T } from "../lib/theme";
 
 // Home e Profilo sono ora nell'header in alto (AcHomeHeader.jsx),
@@ -10,6 +10,7 @@ const LINKS = [
   { to: "/ac-home/budget", label: "Budget", icon: PiggyBank },
   { to: "/ac-home/ricorrenti", label: "Ricorr.", icon: Repeat },
   { to: "/ac-home/scadenze", label: "Scad.", icon: CalendarClock },
+  { to: "/ac-home/coppia", label: "Coppia", icon: HeartHandshake },
 ];
 
 export default function AcHomeNavBar() {
@@ -27,7 +28,7 @@ export default function AcHomeNavBar() {
           <NavLink
             key={to}
             to={to}
-            className="flex flex-col items-center gap-1 px-2 py-1.5 rounded-2xl text-[10px] leading-tight transition-colors"
+            className="flex flex-col items-center gap-1 px-1.5 py-1.5 rounded-2xl text-[10px] leading-tight transition-colors"
             style={({ isActive }) =>
               isActive
                 ? { background: "rgba(255,255,255,0.95)", color: T.forest }
