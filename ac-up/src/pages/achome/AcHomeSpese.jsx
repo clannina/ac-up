@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Home as HomeIcon, Car, Bike, HeartPulse } from "lucide-react";
+import { useSearchParams, Link } from "react-router-dom";
+import { Home as HomeIcon, Car, Bike, HeartPulse, Upload } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { getCategorie, creaCategoria, getSpese, creaSpesa, aggiornaSpesa, eliminaSpesa, registraRimborso, segnaRimborsoCompleto, azzeraRimborso, caricaFotoScontrino, getTotaleGenerale } from "../../lib/acHome";
 import PersonaSelector, { getPersonaPredefinita } from "../../components/PersonaSelector.jsx";
@@ -221,7 +221,16 @@ export default function AcHomeSpese() {
   return (
     <div className="min-h-screen pb-28 px-4 pt-6" style={{ background: BACKGROUND }}>
       <AcHomeHeader />
-      <h1 className="font-display text-2xl mb-4" style={{ color: "#fff" }}>Spese</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="font-display text-2xl" style={{ color: "#fff" }}>Spese</h1>
+        <Link
+          to="/ac-home/importa"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
+          style={{ background: "rgba(255,255,255,0.95)", color: T.forest }}
+        >
+          <Upload size={14} /> Importa estratto conto
+        </Link>
+      </div>
 
       <div className="flex gap-2 mb-5">
         {GRUPPI.map((g) => {
