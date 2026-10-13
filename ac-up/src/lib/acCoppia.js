@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { supabase } from "../supabaseClient";
 
 // Dati della sezione "Soldi in coppia" di AC Home, condivisa tra Anna e Vanna.
 // L'accesso reale è controllato dalle policy RLS (tabella ac_coppia_autorizzati).
