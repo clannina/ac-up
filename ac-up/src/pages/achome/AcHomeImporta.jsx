@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, Upload, Check, AlertTriangle, Sparkles } from "lucide-react";
+import { ChevronLeft, Upload, Check, AlertTriangle, Sparkles, Plus } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import AcHomeHeader from "../../components/AcHomeHeader.jsx";
-import { getCategorie, getSpese, getEntrate } from "../../lib/acHome";
+import { getCategorie, creaCategoria, getSpese, getEntrate } from "../../lib/acHome";
 import {
   leggiFile,
   parseCsv,
@@ -39,6 +39,11 @@ export default function AcHomeImporta() {
   const [errore, setErrore] = useState("");
   const [esito, setEsito] = useState(null);
   const [mostraGia, setMostraGia] = useState(false);
+  // Creazione di una nuova categoria direttamente dal menu a tendina di un movimento
+  const [nuovaCatPer, setNuovaCatPer] = useState(null);
+  const [nuovaCatNome, setNuovaCatNome] = useState("");
+  const [nuovaCatGruppo, setNuovaCatGruppo] = useState("casa");
+  const [creandoCat, setCreandoCat] = useState(false);
 
   async function handleFile(e) {
     const file = e.target.files?.[0];
@@ -120,6 +125,35 @@ export default function AcHomeImporta() {
         return r;
       });
     });
+  }
+
+  function onSelect(r, valore) {
+    if (valore === "__nuova") {
+      setNuovaCatPer(r.chiaveImport);
+      setNuovaCatNome("");
+      return;
+    }
+    if (nuovaCatPer === r.chiaveImport) setNuovaCatPer(null);
+    cambiaScelta(r.chiaveImport, valore);
+  }
+
+  async function creaNuovaCategoria(chiaveImport) {
+    const nome = nuovaCatNome.trim();
+    if (!nome) return;
+    setCreandoCat(true);
+    try {
+      const esistente = categorie.find((c) => c.gruppo === nuovaCatGruppo && c.nome.toLowerCase() === nome.toLowerCase());
+      const cat = esistente || (await creaCategoria(nuovaCatGruppo, nome));
+      if (!esistente) setCategorie((prev) => [...prev, cat].sort((a, b) => a.nome.localeCompare(b.nome)));
+      cambiaScelta(chiaveImport, `cat:${cat.id}`);
+      setNuovaCatPer(null);
+      setNuovaCatNome("");
+    } catch (err) {
+      console.error(err);
+      setErrore("Non sono riuscita a creare la categoria: " + (err.message || ""));
+    } finally {
+      setCreandoCat(false);
+    }
   }
 
   const riepilogo = useMemo(() => {
@@ -274,7 +308,7 @@ export default function AcHomeImporta() {
                       )}
                       <select
                         value={r.scelta}
-                        onChange={(e) => cambiaScelta(r.chiaveImport, e.target.value)}
+                        onChange={(e) => onSelect(r, e.target.value)}
                         className="w-full rounded-xl px-2 py-1.5 text-sm"
                         style={{ background: "#fff" }}
                       >
@@ -282,6 +316,7 @@ export default function AcHomeImporta() {
                           <>
                             <option value="">— Scegli categoria —</option>
                             <option value="salta">Non importare</option>
+                            <option value="__nuova">+ Nuova categoria…</option>
                             {GRUPPI.map((g) => {
                               const cats = categorie.filter((c) => c.gruppo === g.id);
                               if (cats.length === 0) return null;
@@ -301,6 +336,45 @@ export default function AcHomeImporta() {
                           </>
                         )}
                       </select>
+
+                      {nuovaCatPer === r.chiaveImport && (
+                        <div className="mt-2 p-2 rounded-xl flex flex-col gap-2" style={{ background: "rgba(255,255,255,0.15)" }}>
+                          <div className="flex gap-1.5">
+                            {GRUPPI.map((g) => (
+                              <button
+                                key={g.id}
+                                onClick={() => setNuovaCatGruppo(g.id)}
+                                className="flex-1 py-1 rounded-lg text-[11px] font-medium"
+                                style={nuovaCatGruppo === g.id ? { background: "#fff", color: T.forest } : { background: "rgba(255,255,255,0.2)", color: "#fff" }}
+                              >
+                                {g.label}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <input
+                              autoFocus
+                              value={nuovaCatNome}
+                              onChange={(e) => setNuovaCatNome(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === "Enter") creaNuovaCategoria(r.chiaveImport); }}
+                              placeholder="es. Ristoranti e bar"
+                              className="flex-1 min-w-0 rounded-lg px-2 py-1.5 text-sm"
+                              style={{ background: "#fff" }}
+                            />
+                            <button
+                              onClick={() => creaNuovaCategoria(r.chiaveImport)}
+                              disabled={creandoCat}
+                              className="px-3 rounded-lg flex items-center gap-1 text-xs font-medium disabled:opacity-60"
+                              style={{ background: T.forest, color: "#fff" }}
+                            >
+                              <Plus size={14} /> Crea
+                            </button>
+                            <button onClick={() => setNuovaCatPer(null)} className="px-2 rounded-lg text-xs" style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                              Annulla
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
