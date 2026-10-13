@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Home as HomeIcon, Car, Bike, HeartPulse, CalendarClock, Wallet, Receipt, Users } from "lucide-react";
+import { Home as HomeIcon, Car, Bike, HeartPulse, CalendarClock, Wallet, Receipt, Users, HeartHandshake } from "lucide-react";
 import { T, GLASS } from "../../lib/theme";
 import { useAuth } from "../../lib/AuthContext.jsx";
 import AcHomeHeader from "../../components/AcHomeHeader.jsx";
@@ -185,6 +185,20 @@ export default function AcHomeDashboard() {
           <p className="font-display text-sm" style={{ color: "#fff" }}>Totale entrate di questo mese</p>
         </div>
         <p className="font-mono-num text-3xl" style={{ color: "#fff" }}>€ {totaleEntrate.toFixed(2)}</p>
+      </Link>
+
+      {/* Soldi in coppia: conto comune condiviso con Vanna */}
+      <Link to="/ac-home/coppia" className={`${GLASS} flex items-center justify-between rounded-3xl p-4 mb-5`}>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "#fff" }}>
+            <HeartHandshake size={18} color={T.forest} />
+          </div>
+          <div>
+            <p className="font-display text-sm" style={{ color: "#fff" }}>Soldi in coppia</p>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.75)" }}>Conto comune, quote e bilancio del mese</p>
+          </div>
+        </div>
+        <span className="text-lg font-bold" style={{ color: "#fff" }}>→</span>
       </Link>
 
       {/* Riepilogo prossime scadenze */}
